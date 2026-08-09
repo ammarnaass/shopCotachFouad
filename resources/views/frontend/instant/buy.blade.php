@@ -121,14 +121,15 @@
                                    class="w-20 text-center border-2 border-gray-200 rounded-lg py-2 font-bold text-lg">
                             <button type="button" @click="quantity = Math.min(product.stock, quantity + 1); recalculate()"
                                     class="w-10 h-10 border-2 border-gray-200 rounded-lg hover:bg-gray-50 font-bold text-lg">+</button>
-                            <span class="text-sm text-gray-500 mr-2" x-text="'(' + product.stock + ' {{ __t("instant.in_stock") }})'"></span>
+<span class="text-sm text-gray-500 
+                            ms-2" x-text="'(' + product.stock + ' {{ __t("instant.in_stock") }})'"></span>
                         </div>
                     </div>
                 </div>
 
                 {{-- 3) SHIPPING INFO (compact grid) --}}
                 <div class="bg-white rounded-2xl shadow-sm p-4 space-y-3">
-                    <h3 class="font-bold text-base mb-1"><span class="material-symbols-outlined text-purple-600 ml-1">local_shipping</span>{{ __t('instant.shipping_data') }}</h3>
+                    <h3 class="font-bold text-base mb-1"><span class="material-symbols-outlined text-purple-600 me-1">local_shipping</span>{{ __t('instant.shipping_data') }}</h3>
                     <div class="grid sm:grid-cols-2 gap-3">
                         <div>
                             <label class="block text-xs font-semibold text-gray-600 mb-1">{{ __t('instant.first_name') }} *</label>
@@ -236,7 +237,7 @@
                 {{-- 4) SHIPPING METHOD + PAYMENT (compact) --}}
                 <div class="bg-white rounded-2xl shadow-sm p-4 space-y-4">
                     <div>
-                        <h3 class="font-bold text-sm mb-2"><span class="material-symbols-outlined text-purple-600 ml-1">local_shipping</span>{{ __t('instant.shipping_method') }}</h3>
+                        <h3 class="font-bold text-sm mb-2"><span class="material-symbols-outlined text-purple-600 me-1">local_shipping</span>{{ __t('instant.shipping_method') }}</h3>
                         <template x-if="shippingOptions.length === 0">
                             <div class="text-center py-4 text-sm text-gray-500">
                                 <span class="material-symbols-outlined">local_shipping</span>
@@ -274,7 +275,7 @@
                     </div>
 
                      <div>
-                        <h3 class="font-bold text-sm mb-2"><span class="material-symbols-outlined text-purple-600 ml-1">credit_card</span>{{ __t('instant.payment_method') }}</h3>
+                        <h3 class="font-bold text-sm mb-2"><span class="material-symbols-outlined text-purple-600 me-1">credit_card</span>{{ __t('instant.payment_method') }}</h3>
                         @if(site('instant_enable_bank_transfer', '0') === '1')
                             <div class="grid grid-cols-2 gap-2">
                                 <label class="cursor-pointer">
@@ -315,7 +316,7 @@
 
                 {{-- 5) SUMMARY (compact, before submit) --}}
                 <div class="bg-gradient-to-l from-purple-50 to-blue-50 border-2 border-purple-200 rounded-2xl p-4 space-y-2 text-sm">
-                    <h3 class="font-bold text-base mb-2"><span class="material-symbols-outlined text-purple-600 ml-1">receipt</span>{{ __t('instant.order_summary') }}</h3>
+                    <h3 class="font-bold text-base mb-2"><span class="material-symbols-outlined text-purple-600 me-1">receipt</span>{{ __t('instant.order_summary') }}</h3>
                     <div class="flex justify-between"><span class="text-gray-600">{{ __t('product.name') }} × <span x-text="quantity"></span></span><span class="font-semibold" x-text="formatMoney(basePrice * quantity)"></span></div>
                     <template x-for="(item, idx) in optionsSummary" :key="idx">
                         <div class="flex justify-between text-xs"><span class="text-gray-600" x-text="item.option + ': ' + item.value"></span><span x-text="(item.adjustment >= 0 ? '+' : '') + formatMoney(item.adjustment * quantity)"></span></div>
@@ -335,7 +336,7 @@
                 {{-- 6) COUPON (optional, in same card as submit) --}}
                 @if(site('instant_show_coupon', '1') === '1')
                 <div class="bg-white rounded-2xl shadow-sm p-4">
-                    <label class="block text-sm font-semibold mb-2"><span class="material-symbols-outlined text-purple-600 ml-1">confirmation_number</span>{{ __t('instant.coupon') }}</label>
+                    <label class="block text-sm font-semibold mb-2"><span class="material-symbols-outlined text-purple-600 me-1">confirmation_number</span>{{ __t('instant.coupon') }}</label>
                     <div class="flex gap-2">
                         <input type="text" name="coupon_code" x-model="couponCode" @input="couponCode = $event.target.value.toUpperCase()"
                                class="flex-1 px-3 py-2 border-2 border-gray-200 focus:border-purple-500 rounded-lg text-sm uppercase"
@@ -357,18 +358,18 @@
                         :class="canSubmit ? 'hover:shadow-2xl hover:-translate-y-0.5' : 'bg-gray-400'">
                     <template x-if="!submitting">
                         <span>
-                            <span class="material-symbols-outlined ml-1">bolt</span>
+<span class="material-symbols-outlined me-1">bolt</span>
                             <span>{{ __t('instant.complete_order') }} — </span>
                             <span x-text="formatMoney(grandTotal)"></span>
                         </span>
                     </template>
                     <template x-if="submitting">
-                        <span><span class="material-symbols-outlined animate-spin ml-1">sync</span> {{ __t('instant.submitting') }}...</span>
+                        <span><span class="material-symbols-outlined animate-spin ms-1">sync</span> {{ __t('instant.submitting') }}...</span>
                     </template>
                 </button>
 
                 <p class="text-center text-xs text-gray-500">
-                    <span class="material-symbols-outlined text-green-600 ml-1">shield</span>
+<span class="material-symbols-outlined text-green-600 ms-1">shield</span>
                     {{ __t('instant.secure_notice') }}
                 </p>
 
@@ -418,7 +419,7 @@ function instantBuy() {
         dialCode: '+249',
         currencySymbol: '{{ __t('common.currency') }}',
         conversionRate: window.__CONVERSION_RATE__ || 1,
-        storeCountry: @json(config('ecommerce.store.default_country', 'SD')),
+        storeCountry: @json(config('ecommerce.store.default_country', 'DZ')),
 
         // Dynamic shipping options
         shippingOptions: [],
@@ -486,9 +487,10 @@ function instantBuy() {
         init(productData) {
             if (productData) this.product = productData;
             this.updateDialCode();
-            if (this.product && this.form.city) {
-                this.fetchShippingOptions();
-            }
+            // Seed states instantly from inlined config (fetch below refreshes)
+            const seed = this.countries[this.form.country_code]?.states || {};
+            this.statesList = Object.entries(seed).map(([code, name]) => ({ code, name }));
+            this.onCountryChange();
         },
 
         formatMoney(amount) {
@@ -519,7 +521,8 @@ function instantBuy() {
             const targetRate = parseFloat(info.rate_to_usd) || 1;
             this.conversionRate = baseRate > 0 && targetRate > 0 ? baseRate / targetRate : 1;
             try {
-                const res = await fetch('{{ url('/api/countries') }}/' + this.form.country_code + '/states', { headers: { 'Accept': 'application/json' } });
+                const statesUrl = '{{ route("api.countries.states", ["code" => "___"]) }}'.replace('___', this.form.country_code);
+                const res = await fetch(statesUrl, { headers: { 'Accept': 'application/json' } });
                 if (res.ok) {
                     const data = await res.json();
                     this.statesList = data.states || [];

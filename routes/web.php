@@ -2,7 +2,6 @@
 
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\CartController;
-use App\Http\Controllers\CheckoutController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\InstantBuyController;
 use App\Http\Controllers\OrderController;
@@ -20,7 +19,7 @@ Route::get('/lang/{locale}', function (string $locale) {
 })->name('lang.switch')->whereIn('locale', ['ar', 'en', 'fr']);
 
 // Redirect bare paths (no locale prefix) to locale-prefixed versions
-$redirectPaths = ['/admin', '/login', '/register', '/cart', '/checkout', '/orders', '/track', '/shop', '/wishlist'];
+$redirectPaths = ['/admin', '/login', '/register', '/cart', '/orders', '/track', '/shop', '/wishlist'];
 foreach ($redirectPaths as $path) {
     Route::get($path . '/{any?}', function () use ($path) {
         $locale = session('locale', app()->getLocale()) ?: config('ecommerce.languages.default', 'ar');
@@ -28,6 +27,68 @@ foreach ($redirectPaths as $path) {
         return redirect($locale . $path . $suffix, 301);
     })->where('any', '.*');
 }
+
+// SEO routes (no locale prefix)
+Route::get('/sitemap.xml', function () {
+    $products = \App\Models\Catalog\Product::active()
+        ->with('category:id,slug')
+        ->select('id', 'slug', 'name', 'created_at', 'updated_at')
+        ->get();
+    $categories = \App\Models\Catalog\Category::where('status', 'active')
+        ->select('id', 'slug', 'name', 'updated_at')
+        ->get();
+    $pages = \App\Models\Content\Page::where('is_active', true)
+        ->select('id', 'slug', 'name', 'updated_at')
+        ->get();
+
+    $xml = '<?xml version="1.0" encoding="UTF-8"?>' . "\n";
+    $xml .= '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">' . "\n";
+
+    foreach ($products as $product) {
+        $url = route('shop.show', ['slug' => $product->slug], false);
+        $xml .= '  <url>' . "\n";
+        $xml .= '    <loc>' . e($url) . '</loc>' . "\n";
+        $xml .= '    <lastmod>' . $product->updated_at->toDateString() . '</lastmod>' . "\n";
+        $xml .= '    <changefreq>weekly</changefreq>' . "\n";
+        $xml .= '    <priority>0.7</priority>' . "\n";
+        $xml .= '  </url>' . "\n";
+    }
+
+    foreach ($categories as $category) {
+        $url = route('shop.category', ['slug' => $category->slug], false);
+        $xml .= '  <url>' . "\n";
+        $xml .= '    <loc>' . e($url) . '</loc>' . "\n";
+        $xml .= '    <lastmod>' . $category->updated_at->toDateString() . '</lastmod>' . "\n";
+        $xml .= '    <changefreq>weekly</changefreq>' . "\n";
+        $xml .= '    <priority>0.6</priority>' . "\n";
+        $xml .= '  </url>' . "\n";
+    }
+
+    foreach ($pages as $page) {
+        $url = route('page.show', ['slug' => $page->slug], false);
+        $xml .= '  <url>' . "\n";
+        $xml .= '    <loc>' . e($url) . '</loc>' . "\n";
+        $xml .= '    <lastmod>' . $page->updated_at->toDateString() . '</lastmod>' . "\n";
+        $xml .= '    <changefreq>monthly</changefreq>' . "\n";
+        $xml .= '    <priority>0.5</priority>' . "\n";
+        $xml .= '  </url>' . "\n";
+    }
+
+    $xml .= '</urlset>';
+
+    return response($xml, 200, ['Content-Type' => 'application/xml']);
+})->name('sitemap');
+
+Route::get('/robots.txt', function () {
+    $txt = "User-agent: *\n";
+    $txt .= "Allow: /\n";
+    $txt .= "Disallow: /admin/\n";
+    $txt .= "Disallow: /api/\n";
+    $txt .= "\n";
+    $txt .= "Sitemap: " . url('/sitemap.xml') . "\n";
+
+    return response($txt, 200, ['Content-Type' => 'text/plain']);
+})->name('robots');
 
 // Locale-prefixed routes
 Route::prefix('{locale?}')->whereIn('locale', ['ar', 'en', 'fr'])->middleware('locale')->group(function () {
@@ -48,7 +109,7 @@ Route::get('/currency/{code}', function (string $code) {
     $code = strtoupper($code);
     $countries = config('ecommerce.countries', []);
     if (!array_key_exists($code, $countries)) {
-        $code = config('ecommerce.default_country', 'SD');
+        $code = config('ecommerce.default_country', 'DZ');
     }
     session(['selected_country' => $code]);
     return back();
@@ -82,12 +143,7 @@ Route::delete('/cart/coupon', [CartController::class, 'removeCoupon'])->name('ca
 // Newsletter
 Route::post('/newsletter/subscribe', [App\Http\Controllers\NewsletterController::class, 'subscribe'])->name('newsletter.subscribe');
 
-// Checkout
 Route::middleware('auth')->group(function () {
-    Route::get('/checkout', [CheckoutController::class, 'index'])->name('checkout.index');
-    Route::post('/checkout/calculate-shipping', [CheckoutController::class, 'calculateShipping'])->name('checkout.shipping');
-    Route::post('/checkout/place-order', [CheckoutController::class, 'placeOrder'])->name('checkout.place');
-
     // Orders
     Route::get('/orders', [OrderController::class, 'index'])->name('orders.index');
     Route::get('/orders/{id}', [OrderController::class, 'show'])->name('orders.show');
@@ -140,6 +196,10 @@ Route::middleware(['auth', 'role:admin,manager'])->prefix('admin')->name('admin.
     Route::post('/orders/{order}/notes', [App\Http\Controllers\Admin\OrderController::class, 'addNote'])->name('orders.notes.store');
     Route::delete('/orders/notes/{note}', [App\Http\Controllers\Admin\OrderController::class, 'deleteNote'])->name('orders.notes.delete');
     Route::post('/orders/bulk-action', [App\Http\Controllers\Admin\OrderController::class, 'bulkAction'])->name('orders.bulkAction');
+    Route::get('/orders/{order}/invoice', [App\Http\Controllers\Admin\OrderPrintController::class, 'invoice'])->name('orders.invoice');
+    Route::get('/orders/{order}/label', [App\Http\Controllers\Admin\OrderPrintController::class, 'customerLabel'])->name('orders.label');
+    Route::post('/orders/bulk-invoice', [App\Http\Controllers\Admin\OrderPrintController::class, 'bulkInvoice'])->name('orders.bulkInvoice');
+    Route::post('/orders/bulk-label', [App\Http\Controllers\Admin\OrderPrintController::class, 'bulkLabel'])->name('orders.bulkLabel');
     Route::resource('coupons', App\Http\Controllers\Admin\CouponController::class);
     Route::resource('users', App\Http\Controllers\Admin\UserController::class);
 

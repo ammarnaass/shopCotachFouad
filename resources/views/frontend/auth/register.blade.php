@@ -15,7 +15,7 @@
 @section('content')
 @php
     $countries = config('ecommerce.countries', []);
-    $defaultCountry = old('country_code', config('ecommerce.store.default_country', 'SD'));
+    $defaultCountry = old('country_code', config('ecommerce.store.default_country', 'DZ'));
 @endphp
 
 <section class="min-h-[85vh] flex items-center justify-center py-12 bg-white">
@@ -120,9 +120,9 @@
                                    class="w-20 px-3 py-2.5 border border-outline-variant rounded-xl bg-surface-container-low text-center font-semibold text-on-surface-variant">
                             <input type="text" name="phone" value="{{ old('phone') }}" required
                                    placeholder="5XXXXXXXX"
-                                   class="flex-1 form-input text-right @error('phone') form-input-error @enderror">
+                                   class="flex-1 form-input text-end @error('phone') form-input-error @enderror">
                         </div>
-                        <p class="form-help"><span class="material-symbols-outlined text-xs ml-1">info</span>{{ __t('auth.register.phone_help') }}</p>
+                        <p class="form-help"><span class="material-symbols-outlined text-xs ms-1">info</span>{{ __t('auth.register.phone_help') }}</p>
                         @error('phone')<p class="form-error">{{ $message }}</p>@enderror
                     </div>
 
@@ -152,7 +152,7 @@
                     </div>
 
                     <button type="submit" class="btn-block btn-lg mt-2 text-white font-bold rounded-xl py-3.5 transition-all duration-200 hover:brightness-110 active:scale-[0.98] shadow-lg" style="background: {{ $siteSettings['primary_color'] ?? '#004ac6' }};">
-                        <span class="material-symbols-outlined align-middle ml-1">person_add</span>
+                        <span class="material-symbols-outlined align-middle ms-1">person_add</span>
                         {{ __t('auth.register.submit') }}
                     </button>
                 </form>

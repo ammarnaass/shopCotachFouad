@@ -73,11 +73,11 @@
                                 @endif
                                 @if($item->custom_text)
                                     <div class="text-xs text-gray-500 mt-1">
-                                        <span class="material-symbols-outlined text-[10px] ml-1">edit</span>{{ Str::limit($item->custom_text, 50) }}
+                                        <span class="material-symbols-outlined text-[10px] ms-1">edit</span>{{ Str::limit($item->custom_text, 50) }}
                                     </div>
                                 @endif
                             </div>
-                            <div class="text-left flex-shrink-0">
+<div class="text-start flex-shrink-0">
                                 <div class="text-sm text-gray-600">{{ $item->quantity }} × {{ number_format(convertPrice($item->price), 0) }}</div>
                                 <div class="font-bold text-gray-800">{{ number_format(convertPrice($item->total), 0) }} {{ $countrySymbol }}</div>
                             </div>
@@ -96,7 +96,7 @@
                     </div>
                     @if($order->discount > 0)
                         <div class="flex justify-between text-emerald-600">
-                            <span><span class="material-symbols-outlined text-xs ml-1">local_offer</span>{{ __t('instant.discount') }}</span>
+                            <span><span class="material-symbols-outlined text-xs ms-1">local_offer</span>{{ __t('instant.discount') }}</span>
                             <span class="font-semibold">-{{ number_format(convertPrice($order->discount), 0) }} {{ $countrySymbol }}</span>
                         </div>
                     @endif
@@ -121,11 +121,11 @@
                     <div class="bg-gradient-to-l from-blue-50 to-indigo-50 border border-blue-100 rounded-xl p-4">
                         <div class="font-bold text-gray-800">{{ $order->shippingAddress->name }}</div>
                         <div class="text-sm text-gray-600 mt-1">
-                            <span class="material-symbols-outlined text-xs ml-1 text-gray-400">phone</span>
+<span class="material-symbols-outlined text-xs ms-1 text-gray-400">phone</span>
                             {{ $order->shippingAddress->phone }}
                         </div>
                         <div class="text-sm text-gray-600 mt-1">
-                            <span class="material-symbols-outlined text-xs ml-1 text-gray-400">location_on</span>
+                            <span class="material-symbols-outlined text-xs ms-1 text-gray-400">location_on</span>
                             {{ $order->shippingAddress->full_address }}
                         </div>
                     </div>

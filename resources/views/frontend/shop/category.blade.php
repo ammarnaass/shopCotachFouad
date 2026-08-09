@@ -46,7 +46,7 @@
         <div class="card mb-6">
             <div class="card-body p-4">
                 <div class="flex flex-wrap gap-2 items-center">
-                    <span class="text-sm text-gray-600 ml-2 flex items-center gap-1">
+                    <span class="text-sm text-gray-600 ms-2 flex items-center gap-1">
                         <span class="material-symbols-outlined text-xs">account_tree</span>
                         {{ __t('shop.category.subcategories') }}
                     </span>
@@ -58,7 +58,7 @@
                         <a href="{{ route('shop.category', ['slug' => $child->slug]) }}"
                            class="px-4 py-2 rounded-xl text-sm font-medium bg-gray-50 text-gray-700 hover:bg-gray-100 transition border border-gray-200">
                             {{ $child->name }}
-                            <span class="text-xs text-gray-400 mr-1">({{ $child->products()->count() }})</span>
+                            <span class="text-xs text-gray-400 me-1">({{ $child->products()->count() }})</span>
                         </a>
                     @endforeach
                 </div>
@@ -83,7 +83,7 @@
                         <h3 class="font-label-md text-label-md mb-3">{{ __t('shop.category.quick_search') }}</h3>
                         <div class="relative">
                             <input type="text" name="q" value="{{ request('q') }}" placeholder="{{ __t('shop.category.search_placeholder') }}"
-                                   class="form-input text-sm pr-9 pl-3 py-2">
+                                   class="form-input text-sm pe-9 ps-3 py-2">
                             <span class="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 text-outline text-lg">search</span>
                         </div>
                     </div>
@@ -101,45 +101,6 @@
                                 <span>0 {{ currentCurrencySymbol() }}</span>
                                 <span>2000 {{ currentCurrencySymbol() }}</span>
                             </div>
-                        </div>
-                    </div>
-
-                    {{-- Color filter --}}
-                    <div>
-                        <h3 class="font-label-md text-label-md mb-3">{{ __t('shop.category.colors') }}</h3>
-                        <div class="flex flex-wrap gap-2.5">
-                            @foreach([
-                                'أحمر' => ['class' => 'bg-red-600', 'label' => __t('shop.category.color.red')],
-                                'أزرق' => ['class' => 'bg-blue-600', 'label' => __t('shop.category.color.blue')],
-                                'أسود' => ['class' => 'bg-black', 'label' => __t('shop.category.color.black')],
-                                'أبيض' => ['class' => 'bg-white border border-outline-variant', 'label' => __t('shop.category.color.white')],
-                                'أصفر' => ['class' => 'bg-yellow-400', 'label' => __t('shop.category.color.yellow')],
-                                'أخضر' => ['class' => 'bg-green-600', 'label' => __t('shop.category.color.green')]
-                            ] as $colorKey => $colorInfo)
-                                <label class="relative cursor-pointer active:scale-95 transition-transform">
-                                    <input type="radio" name="color" value="{{ $colorKey }}" {{ request('color') === $colorKey ? 'checked' : '' }} class="peer sr-only">
-                                    <span class="inline-block w-7 h-7 rounded-full {{ $colorInfo['class'] }} shadow-sm transition-all peer-checked:ring-2 peer-checked:ring-offset-2 peer-checked:ring-primary" title="{{ $colorInfo['label'] }}"></span>
-                                </label>
-                            @endforeach
-                        </div>
-                    </div>
-
-                    {{-- Size filter --}}
-                    <div>
-                        <h3 class="font-label-md text-label-md mb-3">{{ __t('shop.category.size') }}</h3>
-                        <div class="space-y-2.5">
-                            @foreach([
-                                'S' => 'Small (S)',
-                                'M' => 'Medium (M)',
-                                'L' => 'Large (L)',
-                                'XL' => 'Extra Large (XL)',
-                                'XXL' => 'Double Extra Large (XXL)'
-                            ] as $sizeVal => $sizeLabel)
-                                <label class="flex items-center gap-3 cursor-pointer group">
-                                    <input type="checkbox" name="sizes[]" value="{{ $sizeVal }}" {{ in_array($sizeVal, (array)request('sizes')) ? 'checked' : '' }} class="form-checkbox rounded text-primary focus:ring-primary border-outline-variant">
-                                    <span class="text-body-sm text-on-surface-variant group-hover:text-on-surface transition-colors">{{ $sizeLabel }}</span>
-                                </label>
-                            @endforeach
                         </div>
                     </div>
 
@@ -187,7 +148,7 @@
                 <div class="flex items-center gap-3 w-full sm:w-auto justify-end">
                     <div class="flex items-center gap-2 bg-surface-container-low px-3 py-1.5 rounded-lg border border-outline-variant text-sm">
                         <span class="text-xs text-on-surface-variant font-medium">{{ __t('shop.category.sort_by') }}</span>
-                        <select onchange="window.location.href = this.value" class="bg-transparent border-none focus:ring-0 text-xs font-bold pr-8 cursor-pointer py-0">
+                        <select onchange="window.location.href = this.value" class="bg-transparent border-none focus:ring-0 text-xs font-bold pe-8 cursor-pointer py-0">
                             <option value="{{ request()->fullUrlWithQuery(['sort' => 'created_at', 'dir' => 'desc']) }}" {{ request('sort') == 'created_at' || !request('sort') ? 'selected' : '' }}>{{ __t('shop.category.sort.newest') }}</option>
                             <option value="{{ request()->fullUrlWithQuery(['sort' => 'price', 'dir' => 'asc']) }}" {{ request('sort') == 'price' && request('dir') == 'asc' ? 'selected' : '' }}>{{ __t('shop.category.sort.price_low') }}</option>
                             <option value="{{ request()->fullUrlWithQuery(['sort' => 'price', 'dir' => 'desc']) }}" {{ request('sort') == 'price' && request('dir') == 'desc' ? 'selected' : '' }}>{{ __t('shop.category.sort.price_high') }}</option>

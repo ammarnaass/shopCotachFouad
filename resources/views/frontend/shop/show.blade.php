@@ -3,12 +3,13 @@
 @section('title', $product->seo_title ?? $product->name . ' - ' . site('store_name'))
 @section('description', $product->seo_description ?? $product->short_description ?? Str::limit(strip_tags($product->description), 160))
 @section('og_type', 'product')
+@section('canonical', route('shop.show', ['slug' => $product->slug]))
 
 @php
     use Illuminate\Support\Str;
-    $ibSettings = \App\Models\InstantBuySetting::firstOrCreate([], []);
+    $ibSettings = \App\Models\InstantBuy\InstantBuySetting::firstOrCreate([], []);
     $countries = config('ecommerce.countries', []);
-    $defaultCountry = old('country_code', auth()->user()->country_code ?? session('selected_country', config('ecommerce.store.default_country', 'SD')));
+    $defaultCountry = old('country_code', auth()->user()->country_code ?? session('selected_country', config('ecommerce.store.default_country', 'DZ')));
     $defaultState = old('state_code', auth()->user()->defaultAddress?->state_code ?? '');
     $countrySymbol = $countries[$defaultCountry]['currency_symbol'] ?? config('ecommerce.store.currency_symbol', __t('common.currency'));
     $hasOptions = $product->options->count() > 0;
@@ -17,7 +18,40 @@
     $imageList = $product->images->map(fn($i) => asset('storage/' . $i->image))->values();
     $authUserData = auth()->user() ? auth()->user()->only(['name', 'email', 'phone', 'country_code', 'state_code']) : [];
     $ibS = fn($key) => $ibSettings->$key ?? null;
+
+    // JSON-LD Product schema (PRD §38)
+    $schema = [
+        '@context' => 'https://schema.org/',
+        '@type' => 'Product',
+        'name' => $product->name,
+        'image' => $imageList->all(),
+        'description' => $product->short_description ?? Str::limit(strip_tags((string) $product->description), 160),
+        'sku' => $product->sku,
+        'category' => $product->category?->name,
+        'brand' => ['@type' => 'Brand', 'name' => site('store_name')],
+        'offers' => [
+            '@type' => 'Offer',
+            'url' => route('shop.show', ['slug' => $product->slug]),
+            'priceCurrency' => config('ecommerce.countries.' . $defaultCountry . '.currency', 'DZD'),
+            'price' => (float) $product->final_price,
+            'availability' => $product->stock > 0
+                ? 'https://schema.org/InStock'
+                : 'https://schema.org/OutOfStock',
+            'itemCondition' => 'https://schema.org/NewCondition',
+        ],
+    ];
+    if ($product->reviews_count ?? 0) {
+        $schema['aggregateRating'] = [
+            '@type' => 'AggregateRating',
+            'ratingValue' => (float) ($product->reviews_avg_rating ?? 0),
+            'reviewCount' => (int) $product->reviews_count,
+        ];
+    }
 @endphp
+
+@push('head')
+<script type="application/ld+json">{!! json_encode($schema, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) !!}</script>
+@endpush
 
 @push('styles')
 <style>
@@ -62,7 +96,7 @@
         <div class="container-app py-3">
             <nav class="flex items-center gap-2 text-sm text-gray-500 flex-wrap">
                 <a href="{{ route('home') }}" class="hover:text-blue-600 flex items-center gap-1">
-                    <span class="material-symbols-outlined ml-1">home</span>{{ __t('nav.home') }}
+                    <span class="material-symbols-outlined ms-1">home</span>{{ __t('nav.home') }}
                 </a>
                 <span class="material-symbols-outlined text-xs">chevron_right</span>
                 <a href="{{ route('shop.index') }}" class="hover:text-blue-600">{{ __t('nav.products') }}</a>
@@ -129,7 +163,7 @@
                         <div class="p-5 md:p-6 flex flex-col">
                             <template x-if="product.categoryName">
                                 <a :href="'/category/' + product.categorySlug" class="text-xs text-blue-600 font-bold uppercase tracking-wide mb-2 hover:underline">
-                                    <span class="material-symbols-outlined ml-1">local_offer</span><span x-text="product.categoryName"></span>
+                                    <span class="material-symbols-outlined ms-1">local_offer</span><span x-text="product.categoryName"></span>
                                 </a>
                             </template>
                             <h1 class="text-2xl md:text-3xl font-extrabold text-gray-900 leading-tight mb-3">{{ $product->name }}</h1>
@@ -326,18 +360,22 @@
                         </h2>
                         <div class="space-y-3">
                             <div class="grid grid-cols-2 gap-2">
+                                @if($ibS('field_first_name_enabled'))
                                 <div>
-                                    <label class="block text-xs font-semibold text-gray-600 mb-1">{{ __t('instant.first_name') }} *</label>
-                                    <input type="text" name="first_name" required x-model="form.first_name"
+                                    <label class="block text-xs font-semibold text-gray-600 mb-1">{{ $ibS('field_first_name_label') ?? __t('instant.first_name') }} {{ $ibS('field_first_name_required') ? '*' : '' }}</label>
+                                    <input type="text" name="first_name" {{ $ibS('field_first_name_required') ? 'required' : '' }} x-model="form.first_name"
                                            class="w-full px-3 py-2 border-2 border-gray-200 rounded-lg text-sm"
-                                           placeholder="{{ __t('instant.first_name_placeholder') }}">
+                                           placeholder="{{ $ibS('field_first_name_placeholder') ?? __t('instant.first_name_placeholder') }}">
                                 </div>
+                                @endif
+                                @if($ibS('field_last_name_enabled'))
                                 <div>
-                                    <label class="block text-xs font-semibold text-gray-600 mb-1">{{ __t('instant.last_name') }} *</label>
-                                    <input type="text" name="last_name" required x-model="form.last_name"
+                                    <label class="block text-xs font-semibold text-gray-600 mb-1">{{ $ibS('field_last_name_label') ?? __t('instant.last_name') }} {{ $ibS('field_last_name_required') ? '*' : '' }}</label>
+                                    <input type="text" name="last_name" {{ $ibS('field_last_name_required') ? 'required' : '' }} x-model="form.last_name"
                                            class="w-full px-3 py-2 border-2 border-gray-200 rounded-lg text-sm"
-                                           placeholder="{{ __t('instant.last_name_placeholder') }}">
+                                           placeholder="{{ $ibS('field_last_name_placeholder') ?? __t('instant.last_name_placeholder') }}">
                                 </div>
+                                @endif
                             </div>
                             @if($ibS('field_email_enabled'))
                             <div>
@@ -347,16 +385,18 @@
                                        placeholder="{{ $ibS('field_email_placeholder') ?? 'example@mail.com' }}">
                             </div>
                             @endif
+                            @if($ibS('field_phone_enabled'))
                             <div>
-                                <label class="block text-xs font-semibold text-gray-600 mb-1">{{ __t('instant.phone') }} *</label>
+                                <label class="block text-xs font-semibold text-gray-600 mb-1">{{ $ibS('field_phone_label') ?? __t('instant.phone') }} {{ $ibS('field_phone_required') ? '*' : '' }}</label>
                                 <div class="flex gap-1" dir="ltr">
                                     <input type="text" :value="dialCode" readonly
                                            class="w-16 px-2 py-2 border-2 border-gray-200 rounded-lg bg-gray-50 text-center font-semibold text-xs">
-                                    <input type="tel" name="phone" required x-model="form.phone"
+                                    <input type="tel" name="phone" {{ $ibS('field_phone_required') ? 'required' : '' }} x-model="form.phone"
                                            class="flex-1 px-3 py-2 border-2 border-gray-200 rounded-lg text-sm"
-                                           placeholder="5XXXXXXXX">
+                                           placeholder="{{ $ibS('field_phone_placeholder') ?? '5XXXXXXXX' }}">
                                 </div>
                             </div>
+                            @endif
                         </div>
                     </div>
 
@@ -367,15 +407,17 @@
                             {{ __t('instant.shipping_data') }}
                         </h2>
                         <div class="space-y-3">
+                            @if($ibS('field_country_enabled'))
                             <div>
-                                <label class="block text-xs font-semibold text-gray-600 mb-1">{{ __t('common.country') }} *</label>
-                                <select name="country_code" required x-model="countryCode" @change="onCountryChange()"
+                                <label class="block text-xs font-semibold text-gray-600 mb-1">{{ $ibS('field_country_label') ?? __t('common.country') }} {{ $ibS('field_country_required') ? '*' : '' }}</label>
+                                <select name="country_code" {{ $ibS('field_country_required') ? 'required' : '' }} x-model="countryCode" @change="onCountryChange()"
                                         class="w-full px-3 py-2 border-2 border-gray-200 rounded-lg text-sm bg-white">
                                     @foreach($countries as $code => $info)
                                         <option value="{{ $code }}">{{ $info['flag'] ?? '' }} {{ $info['name'] }} - {{ $info['name_en'] }}</option>
                                     @endforeach
                                 </select>
                             </div>
+                            @endif
                             @if($ibS('field_state_enabled'))
                             <div>
                                 <label class="block text-xs font-semibold text-gray-600 mb-1">{{ $ibS('field_state_label') ?? __t('common.state') }} {{ $ibS('field_state_required') ? '*' : '' }}</label>
@@ -388,12 +430,14 @@
                                 </select>
                             </div>
                             @endif
+                            @if($ibS('field_city_enabled'))
                             <div>
-                                <label class="block text-xs font-semibold text-gray-600 mb-1">{{ __t('instant.city') }} *</label>
-                                <input type="text" name="city" required x-model="city" @input.debounce.400ms="if(city&&countryCode)this.fetchShippingOptions();this.recalculate()"
+                                <label class="block text-xs font-semibold text-gray-600 mb-1">{{ $ibS('field_city_label') ?? __t('instant.city') }} {{ $ibS('field_city_required') ? '*' : '' }}</label>
+                                <input type="text" name="city" {{ $ibS('field_city_required') ? 'required' : '' }} x-model="city" @input.debounce.400ms="if(city&&countryCode)this.fetchShippingOptions();this.recalculate()"
                                        class="w-full px-3 py-2 border-2 border-gray-200 rounded-lg text-sm"
-                                       placeholder="{{ __t('instant.city_placeholder') }}">
+                                       placeholder="{{ $ibS('field_city_placeholder') ?? __t('instant.city_placeholder') }}">
                             </div>
+                            @endif
                             @if($ibS('field_district_enabled'))
                             <div>
                                 <label class="block text-xs font-semibold text-gray-600 mb-1">{{ $ibS('field_district_label') ?? __t('instant.district') }} {{ $ibS('field_district_required') ? '*' : '' }}</label>
@@ -402,12 +446,14 @@
                                        placeholder="{{ $ibS('field_district_placeholder') ?? __t('instant.district_placeholder') }}">
                             </div>
                             @endif
+                            @if($ibS('field_address_enabled'))
                             <div>
-                                <label class="block text-xs font-semibold text-gray-600 mb-1">{{ __t('instant.address') }} *</label>
-                                <textarea name="address" required x-model="form.address" rows="2"
+                                <label class="block text-xs font-semibold text-gray-600 mb-1">{{ $ibS('field_address_label') ?? __t('instant.address') }} {{ $ibS('field_address_required') ? '*' : '' }}</label>
+                                <textarea name="address" {{ $ibS('field_address_required') ? 'required' : '' }} x-model="form.address" rows="2"
                                           class="w-full px-3 py-2 border-2 border-gray-200 rounded-lg text-sm"
-                                          placeholder="{{ __t('instant.address_placeholder') }}"></textarea>
+                                          placeholder="{{ $ibS('field_address_placeholder') ?? __t('instant.address_placeholder') }}"></textarea>
                             </div>
+                            @endif
                             @if($ibS('field_zip_enabled'))
                             <div>
                                 <label class="block text-xs font-semibold text-gray-600 mb-1">{{ $ibS('field_zip_label') ?? __t('instant.zip') }} {{ $ibS('field_zip_required') ? '*' : '' }}</label>
@@ -456,12 +502,6 @@
                                     </label>
                                 </template>
                             </div>
-                        </template>
-                        <template x-if="shippingFree && subtotal > 0">
-                            <p class="text-xs text-green-600 mt-2 flex items-center gap-1">
-                                <i class="fas fa-gift"></i>
-                                <span>{{ __t('instant.free_shipping_notice') }}</span>
-                            </p>
                         </template>
                         <template x-if="fixedCompany">
                             <p class="text-xs text-blue-600 mt-2 flex items-center gap-1">
@@ -561,7 +601,7 @@
                         <h2 class="text-base font-bold mb-3 flex items-center gap-2 text-gray-800">
                             <i class="fas fa-receipt text-green-600"></i>
                             {{ __t('instant.order_summary') }}
-                            <span x-show="loading" class="text-xs text-gray-400 mr-auto">
+                            <span x-show="loading" class="text-xs text-gray-400 me-auto">
                                 <i class="fas fa-spinner fa-spin"></i> {{ __t('common.loading') }}
                             </span>
                         </h2>
@@ -575,7 +615,7 @@
                                     <span class="flex items-center gap-1">
                                         <i class="fas fa-tag text-xs"></i> {{ __t('instant.discount') }}
                                         <template x-if="appliedCoupon">
-                                            <span class="badge bg-red-100 text-red-600 text-[10px] px-1.5 py-0 rounded mr-1" x-text="appliedCoupon.code"></span>
+                                            <span class="badge bg-red-100 text-red-600 text-[10px] px-1.5 py-0 rounded me-1" x-text="appliedCoupon.code"></span>
                                         </template>
                                     </span>
                                     <span class="font-semibold" x-text="'- ' + formatMoney(discount) + ' ' + currencySymbol"></span>
@@ -588,7 +628,7 @@
                             </div>
                             <template x-if="paymentMethod === 'cod' && codFee > 0">
                                 <div class="flex justify-between text-amber-600">
-                                    <span><i class="fas fa-money-bill text-xs ml-1"></i>{{ __t('instant.cod_fee') }}</span>
+                                    <span><i class="fas fa-money-bill text-xs ms-1"></i>{{ __t('instant.cod_fee') }}</span>
                                     <span class="font-semibold" x-text="formatMoney(codFee) + ' ' + currencySymbol"></span>
                                 </div>
                             </template>
@@ -668,7 +708,7 @@
             </template>
 
             <template x-if="successDetails && {{ $ibS('success_show_order_details') ? 'true' : 'false' }}">
-                <div class="mt-3 text-right text-sm bg-gray-50 rounded-xl p-3 border border-gray-200 space-y-1">
+                <div class="mt-3 text-end text-sm bg-gray-50 rounded-xl p-3 border border-gray-200 space-y-1">
                     <div class="flex justify-between"><span class="text-gray-500">{{ __t('product.name') }}</span><span class="font-medium" x-text="successDetails.product_name"></span></div>
                     <div class="flex justify-between"><span class="text-gray-500">{{ __t('instant.total') }}</span><span class="font-bold text-green-600" x-text="successDetails.total"></span></div>
                 </div>
@@ -746,7 +786,7 @@ function instantBuyForm() {
 
         // === Quantity & Location ===
         quantity: 1,
-        countryCode: 'SD',
+        countryCode: 'DZ',
         stateCode: '',
         city: '',
         countries: {},
@@ -763,7 +803,7 @@ function instantBuyForm() {
 
         // === Conversion Rate ===
         conversionRate: window.__CONVERSION_RATE__ || 1,
-        storeCountry: 'SD',
+        storeCountry: 'DZ',
 
         // === Dynamic Shipping Options ===
         shippingOptions: [],
@@ -817,34 +857,34 @@ function instantBuyForm() {
         },
 
         get canSubmit() {
-            @if($ibS('field_country_required'))
+            @if($ibS('field_country_enabled') && $ibS('field_country_required'))
             if (!this.countryCode) return false;
             @endif
-            @if($ibS('field_city_required'))
+            @if($ibS('field_city_enabled') && $ibS('field_city_required'))
             if (!this.city) return false;
             @endif
-            @if($ibS('field_phone_required'))
+            @if($ibS('field_phone_enabled') && $ibS('field_phone_required'))
             if (!this.form.phone) return false;
             @endif
-            @if($ibS('field_address_required'))
+            @if($ibS('field_address_enabled') && $ibS('field_address_required'))
             if (!this.form.address) return false;
             @endif
-            @if($ibS('field_first_name_required'))
+            @if($ibS('field_first_name_enabled') && $ibS('field_first_name_required'))
             if (!this.form.first_name) return false;
             @endif
-            @if($ibS('field_last_name_required'))
+            @if($ibS('field_last_name_enabled') && $ibS('field_last_name_required'))
             if (!this.form.last_name) return false;
             @endif
-            @if($ibS('field_email_required'))
+            @if($ibS('field_email_enabled') && $ibS('field_email_required'))
             if (!this.form.email) return false;
             @endif
-            @if($ibS('field_state_required'))
+            @if($ibS('field_state_enabled') && $ibS('field_state_required'))
             if (!this.stateCode) return false;
             @endif
-            @if($ibS('field_district_required'))
+            @if($ibS('field_district_enabled') && $ibS('field_district_required'))
             if (!this.form.district) return false;
             @endif
-            @if($ibS('field_zip_required'))
+            @if($ibS('field_zip_enabled') && $ibS('field_zip_required'))
             if (!this.form.zip) return false;
             @endif
             return true;
@@ -865,12 +905,13 @@ function instantBuyForm() {
                 : 0;
             this.images = images || [];
             this.countries = countries || {};
-            this.countryCode = defaultCountry || 'SD';
+            this.countryCode = defaultCountry || 'DZ';
+            this.currentStates = (this.countries[this.countryCode]?.states) || {};
             this.stateCode = defaultState || '';
             this.currencySymbol = countries[defaultCountry]?.currency_symbol || defaultSymbol || '{{ __t('common.currency') }}';
-            this.dialCode = countries[defaultCountry]?.dial_code || '+249';
+            this.dialCode = countries[defaultCountry]?.dial_code || '+213';
             this.conversionRate = parseFloat(conversionRate) || 1;
-            this.storeCountry = '@json(config('ecommerce.store.default_country', 'SD'))';
+            this.storeCountry = '@json(config('ecommerce.store.default_country', 'DZ'))';
             this.authUser = authUser || null;
             @if($product->category)
             this.product.categoryName = @json($product->category->name);

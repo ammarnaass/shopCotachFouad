@@ -62,23 +62,23 @@
                 </div>
                 {{-- Nav --}}
                 <nav class="p-3 space-y-1">
-                    <button @click="tab='profile'" :class="tab==='profile' ? 'bg-brand-50 text-brand-700 font-semibold' : 'text-gray-700 hover:bg-gray-50'" class="w-full text-right px-3 py-2.5 rounded-lg text-sm transition flex items-center gap-2">
+                    <button @click="tab='profile'" :class="tab==='profile' ? 'bg-brand-50 text-brand-700 font-semibold' : 'text-gray-700 hover:bg-gray-50'" class="w-full text-end px-3 py-3 rounded-lg text-sm transition flex items-center gap-2">
                         <span class="material-symbols-outlined text-xs w-4">person</span>
                         {{ __t('account.profile') }}
                     </button>
-                    <button @click="tab='addresses'" :class="tab==='addresses' ? 'bg-brand-50 text-brand-700 font-semibold' : 'text-gray-700 hover:bg-gray-50'" class="w-full text-right px-3 py-2.5 rounded-lg text-sm transition flex items-center gap-2">
+                    <button @click="tab='addresses'" :class="tab==='addresses' ? 'bg-brand-50 text-brand-700 font-semibold' : 'text-gray-700 hover:bg-gray-50'" class="w-full text-end px-3 py-3 rounded-lg text-sm transition flex items-center gap-2">
                         <span class="material-symbols-outlined text-xs w-4">location_on</span>
                         {{ __t('account.addresses') }}
                     </button>
-                    <button @click="tab='password'" :class="tab==='password' ? 'bg-brand-50 text-brand-700 font-semibold' : 'text-gray-700 hover:bg-gray-50'" class="w-full text-right px-3 py-2.5 rounded-lg text-sm transition flex items-center gap-2">
+                    <button @click="tab='password'" :class="tab==='password' ? 'bg-brand-50 text-brand-700 font-semibold' : 'text-gray-700 hover:bg-gray-50'" class="w-full text-end px-3 py-3 rounded-lg text-sm transition flex items-center gap-2">
                         <span class="material-symbols-outlined text-xs w-4">lock</span>
                         {{ __t('account.password_section') }}
                     </button>
-                    <a href="{{ route('orders.index') }}" class="w-full text-right px-3 py-2.5 rounded-lg text-sm transition flex items-center gap-2 text-gray-700 hover:bg-gray-50">
+                    <a href="{{ route('orders.index') }}" class="w-full text-end px-3 py-3 rounded-lg text-sm transition flex items-center gap-2 text-gray-700 hover:bg-gray-50">
                         <span class="material-symbols-outlined text-xs w-4">inventory_2</span>
                         {{ __t('nav.my_orders') }} ({{ $user->orders->count() }})
                     </a>
-                    <a href="{{ route('wishlist.index') }}" class="w-full text-right px-3 py-2.5 rounded-lg text-sm transition flex items-center gap-2 text-gray-700 hover:bg-gray-50">
+                    <a href="{{ route('wishlist.index') }}" class="w-full text-end px-3 py-3 rounded-lg text-sm transition flex items-center gap-2 text-gray-700 hover:bg-gray-50">
                         <span class="material-symbols-outlined text-xs w-4">favorite</span>
                         {{ __t('nav.wishlist') }}
                     </a>
@@ -185,12 +185,12 @@
                                             @if(!$addr->is_default)
                                                 <form method="POST" action="{{ route('account.address.default', $addr) }}">
                                                     @csrf
-                                                    <button class="text-xs text-brand-600 hover:underline font-semibold">{{ __t('account.set_default') }}</button>
+                                                    <button class="text-xs text-brand-600 hover:underline font-semibold px-3 py-2 rounded-lg hover:bg-brand-50">{{ __t('account.set_default') }}</button>
                                                 </form>
                                             @endif
                                             <form method="POST" action="{{ route('account.address.destroy', $addr) }}" onsubmit="return confirm('{{ __t('account.confirm_delete') }}')">
                                                 @csrf @method('DELETE')
-                                                <button class="text-xs text-rose-600 hover:underline font-semibold">{{ __t('common.delete') }}</button>
+                                                <button class="text-xs text-rose-600 hover:underline font-semibold px-3 py-2 rounded-lg hover:bg-rose-50">{{ __t('common.delete') }}</button>
                                             </form>
                                         </div>
                                     </div>
@@ -210,7 +210,7 @@
                             <input type="text" name="phone" placeholder="{{ __t('account.phone_placeholder') }}" required class="form-input text-sm">
                             <select name="country_code" class="form-input text-sm appearance-none">
                                 @foreach($countries as $code => $info)
-                                    <option value="{{ $code }}" {{ ($user->country_code ?? 'SD') == $code ? 'selected' : '' }}>{{ $info['name'] }}</option>
+                                    <option value="{{ $code }}" {{ ($user->country_code ?? 'DZ') == $code ? 'selected' : '' }}>{{ $info['name'] }}</option>
                                 @endforeach
                             </select>
                             <input type="text" name="state_code" placeholder="{{ __t('account.state_placeholder') }}" class="form-input text-sm">
@@ -261,7 +261,7 @@
                                 <span class="material-symbols-outlined absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400">lock</span>
                             </div>
                             @error('password')<p class="form-error">{{ $message }}</p>@enderror
-                            <p class="form-help"><span class="material-symbols-outlined text-xs ml-1">info</span>{{ __t('account.password_hint') }}</p>
+                            <p class="form-help"><span class="material-symbols-outlined text-xs ms-1">info</span>{{ __t('account.password_hint') }}</p>
                         </div>
                         <div>
                             <label class="form-label">{{ __t('account.confirm_password') }} <span class="text-rose-500">*</span></label>

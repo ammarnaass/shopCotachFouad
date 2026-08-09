@@ -18,7 +18,7 @@
 {{-- ============ HERO ============ --}}
 <section class="bg-gradient-to-l from-brand-600 via-brand-500 to-accent-500 text-white py-8 md:py-12">
     <div class="container-app">
-        <nav class="flex items-center gap-2 text-sm text-white/80 mb-4">
+        <nav class="flex items-center gap-2 text-sm text-white/80 mb-4 overflow-x-auto whitespace-nowrap">
             <a href="{{ route('home') }}" class="hover:text-white transition flex items-center gap-1">
                 <span class="material-symbols-outlined text-xs">home</span>
                 {{ __t('nav.home') }}
@@ -63,7 +63,8 @@
                 $currentIndex = array_search($order->status, array_keys($steps));
                 if ($currentIndex === false) $currentIndex = 0;
             @endphp
-            <div class="flex items-center justify-between overflow-x-auto pb-2">
+            <div class="flex items-center justify-between overflow-x-auto pb-2 relative">
+                <div class="absolute left-0 top-0 bottom-0 w-8 bg-gradient-to-r from-white to-transparent pointer-events-none z-10"></div>
                 @foreach($steps as $key => $step)
                     @php $stepIndex = $loop->index; @endphp
                     <div class="flex flex-col items-center min-w-[80px] relative z-10">
@@ -131,7 +132,7 @@
                                     </div>
                                 @endif
                             </div>
-                            <div class="text-left">
+                            <div class="text-start">
                                 <div class="font-extrabold text-lg bg-gradient-to-l from-brand-600 to-accent-500 bg-clip-text text-transparent">
                                     {{ number_format(convertPrice($item->total), 0) }}
                                 </div>
@@ -157,11 +158,11 @@
                             <div class="flex-1">
                                 <p class="font-bold text-gray-800">{{ $order->shippingAddress->name }}</p>
                                 <p class="text-sm text-gray-600 mt-1">
-                                    <span class="material-symbols-outlined text-xs ml-1 text-gray-400">phone</span>
+                                    <span class="material-symbols-outlined text-xs me-1 text-gray-400">phone</span>
                                     {{ $order->shippingAddress->phone }}
                                 </p>
                                 <p class="text-sm text-gray-600 mt-1">
-                                    <span class="material-symbols-outlined text-xs ml-1 text-gray-400">location_on</span>
+                                    <span class="material-symbols-outlined text-xs me-1 text-gray-400">location_on</span>
                                     {{ $order->shippingAddress->full_address }}
                                 </p>
                             </div>
@@ -198,13 +199,13 @@
                     </div>
                     @if($order->discount > 0)
                         <div class="flex justify-between text-emerald-600">
-                            <span><span class="material-symbols-outlined text-xs ml-1">local_offer</span>{{ __t('order.discount') }}</span>
+                            <span><span class="material-symbols-outlined text-xs me-1">local_offer</span>{{ __t('order.discount') }}</span>
                             <span class="font-semibold">-{{ number_format(convertPrice($order->discount), 0) }} {{ currentCurrencySymbol() }}</span>
                         </div>
                     @endif
                     @if($order->cod_fee > 0)
                         <div class="flex justify-between text-gray-600">
-                            <span><span class="material-symbols-outlined text-xs ml-1">payments</span>{{ __t('order.cod_fee') }}</span>
+                            <span><span class="material-symbols-outlined text-xs me-1">payments</span>{{ __t('order.cod_fee') }}</span>
                             <span class="font-semibold">{{ number_format(convertPrice($order->cod_fee), 0) }} {{ currentCurrencySymbol() }}</span>
                         </div>
                     @endif

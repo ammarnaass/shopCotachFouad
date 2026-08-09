@@ -43,7 +43,7 @@
 
     {{-- Material Symbols (Stitch design system) --}}
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&display=swap">
-    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600;700&family=Noto+Sans+Arabic:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600;700&family=Noto+Sans+Arabic:wght@300;400;500;600;700&family=Barlow+Condensed:wght@600;700;800;900&family=Cairo:wght@500;600;700&display=swap" rel="stylesheet">
     {{-- Font Awesome (for legacy category icons stored as fa-xxx) --}}
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" integrity="sha512-Avb2QiuDEEvB4bZJYdft2mNjVShBftLdPG8FJ0V7irTLQ8Uo0qcPxh4Plh7eecU/V7BUV/4hMa1cEQIFVQ==" crossorigin="anonymous" referrerpolicy="no-referrer" />
 
@@ -83,6 +83,9 @@
 
     @stack('styles')
 
+    {{-- JSON-LD and other per-page head content --}}
+    @stack('head')
+
     {{-- Smooth page transitions (avoids the "browser closes and reopens" feeling) --}}
     <style>
         /* Fade transition between page navigations */
@@ -116,6 +119,12 @@
 </head>
 <body class="bg-surface text-on-surface min-h-screen flex flex-col antialiased">
 
+    {{-- Skip to content (accessibility) --}}
+    <a href="#main-content"
+       class="sr-only focus:not-sr-only focus:fixed focus:top-4 focus:start-4 focus:z-[9999] focus:bg-brand-600 focus:text-white focus:px-4 focus:py-2 focus:rounded-lg focus:shadow-lg focus:font-bold focus:outline-none focus:ring-2 focus:ring-white">
+        {{ __t('layout.skip_to_content', [], 'انتقل إلى المحتوى الرئيسي') }}
+    </a>
+
     {{-- Page loader --}}
     <div class="page-loader" id="pageLoader">
         <div class="page-loader-spinner"></div>
@@ -146,7 +155,7 @@
     @endif
 
     {{-- Main content --}}
-    <main class="flex-1">
+    <main id="main-content" class="flex-1">
         @yield('content')
     </main>
 
@@ -158,9 +167,9 @@
 
     {{-- Global JavaScript --}}
     @php
-        $sessionCountry = session('selected_country', config('ecommerce.store.default_country', 'SD'));
+        $sessionCountry = session('selected_country', config('ecommerce.store.default_country', 'DZ'));
         $sessionCurrency = $sessionCountry ? (config('ecommerce.countries.' . $sessionCountry . '.currency_symbol') ?: config('ecommerce.store.currency_symbol', __t('layout.currency_symbol'))) : config('ecommerce.store.currency_symbol', __t('layout.currency_symbol'));
-        $sessionCurrencyCode = $sessionCountry ? (config('ecommerce.countries.' . $sessionCountry . '.currency') ?: config('ecommerce.store.currency', 'SDG')) : config('ecommerce.store.currency', 'SDG');
+        $sessionCurrencyCode = $sessionCountry ? (config('ecommerce.countries.' . $sessionCountry . '.currency') ?: config('ecommerce.store.currency', 'DZD')) : config('ecommerce.store.currency', 'DZD');
     @endphp
     <script>
         // CSRF token for AJAX requests

@@ -33,7 +33,7 @@
     <div class="card mb-6 animate-fade-up" x-data="{ showTracking: false }">
         <div class="card-body p-4">
             <button @click="showTracking = !showTracking" class="w-full flex items-center justify-between text-sm font-semibold text-gray-700">
-                <span><span class="material-symbols-outlined ml-2 text-indigo-600">local_shipping</span>{{ __t('track.by_tracking') }}</span>
+                <span><span class="material-symbols-outlined me-2 text-indigo-600">local_shipping</span>{{ __t('track.by_tracking') }}</span>
                 <span class="material-symbols-outlined" x-text="showTracking ? 'expand_less' : 'expand_more'"></span>
             </button>
             <div x-show="showTracking" x-transition class="mt-4">
@@ -41,7 +41,7 @@
                     <input type="text" name="tracking" placeholder="{{ __t('track.tracking_placeholder') }}"
                            class="flex-1 border rounded-lg px-4 py-2.5 text-sm font-mono">
                     <button type="submit" class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2.5 rounded-lg text-sm">
-                        <span class="material-symbols-outlined ml-1">search</span> {{ __t('track.track_btn') }}
+                        <span class="material-symbols-outlined ms-1">search</span> {{ __t('track.track_btn') }}
                     </button>
                 </form>
             </div>
@@ -68,7 +68,7 @@
                                    class="form-input pl-11 font-mono @error('order_number') form-input-error @enderror">
                             <span class="material-symbols-outlined absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400">tag</span>
                         </div>
-                        <p class="form-help"><span class="material-symbols-outlined text-xs ml-1">info</span>{{ __t('track.order_number_help') }}</p>
+                        <p class="form-help"><span class="material-symbols-outlined text-xs ms-1">info</span>{{ __t('track.order_number_help') }}</p>
                         @error('order_number')<p class="form-error">{{ $message }}</p>@enderror
                     </div>
 
@@ -224,7 +224,7 @@
                                                 @if($update->location)
                                                     <span class="text-gray-500">— {{ $update->location }}</span>
                                                 @endif
-                                                <span class="text-gray-400 mr-2">{{ $update->tracked_at->format('Y-m-d H:i') }}</span>
+                                                <span class="text-gray-400 me-2">{{ $update->tracked_at->format('Y-m-d H:i') }}</span>
                                                 @if($update->description)
                                                     <div class="text-gray-600 mt-0.5">{{ $update->description }}</div>
                                                 @endif

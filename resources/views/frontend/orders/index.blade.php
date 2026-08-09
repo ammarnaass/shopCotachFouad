@@ -65,7 +65,7 @@
                                 </p>
                             </div>
                             <div class="flex items-center gap-3">
-                                <div class="text-left">
+                                <div class="text-start">
                                     <div class="text-xs text-gray-500 mb-0.5">{{ __t('order.total') }}</div>
                                     <div class="font-extrabold text-xl bg-gradient-to-l from-brand-600 to-accent-500 bg-clip-text text-transparent">
                                         {{ number_format(convertPrice($order->grand_total), 0) }} {{ currentCurrencySymbol() }}
@@ -81,7 +81,7 @@
         <div class="mt-8">{{ $orders->links() }}</div>
     @else
         <div class="card max-w-2xl mx-auto animate-fade-up">
-            <div class="card-body p-12 text-center">
+            <div class="card-body p-6 sm:p-12 text-center">
                 <div class="w-24 h-24 mx-auto mb-6 rounded-2xl bg-gradient-to-br from-brand-100 to-accent-100 flex items-center justify-center">
                     <span class="material-symbols-outlined text-5xl text-brand-500">inventory_2</span>
                 </div>

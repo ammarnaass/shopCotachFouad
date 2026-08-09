@@ -86,7 +86,7 @@
                     </div>
 
                     <button type="submit" class="btn-block btn-lg mt-2 text-white font-bold rounded-xl py-3.5 transition-all duration-200 hover:brightness-110 active:scale-[0.98] shadow-lg" style="background: {{ $siteSettings['primary_color'] ?? '#004ac6' }};">
-                        <span class="material-symbols-outlined align-middle ml-1">login</span>
+                        <span class="material-symbols-outlined align-middle ms-1">login</span>
                         {{ __t('auth.login.submit') }}
                     </button>
                 </form>
