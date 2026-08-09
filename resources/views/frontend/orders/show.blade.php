@@ -107,6 +107,9 @@
                                class="w-20 h-20 bg-gray-100 rounded-xl overflow-hidden flex-shrink-0 group">
                                 @if($item->product && $item->product->primaryImage)
                                     <img src="{{ asset('storage/' . $item->product->primaryImage->image) }}"
+                                         alt="{{ $item->product->primaryImage->alt ?? $item->product_name }}"
+                                         loading="lazy"
+                                         decoding="async"
                                          class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300">
                                 @else
                                     <div class="w-full h-full flex items-center justify-center text-gray-400">

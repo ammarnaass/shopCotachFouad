@@ -33,7 +33,7 @@
                         @foreach($popularProducts as $p)
                             <a href="{{ route('instant.buy', ['slug' => $p->slug]) }}" class="group block border-2 border-gray-200 hover:border-purple-500 rounded-xl overflow-hidden transition">
                                 <div class="aspect-square bg-gray-100 overflow-hidden">
-                                    <img src="{{ $p->primaryImage ? asset('storage/' . $p->primaryImage->image) : 'https://placehold.co/300x300/e5e7eb/9ca3af?text=' . urlencode($p->name) }}" class="w-full h-full object-cover group-hover:scale-105 transition" alt="{{ $p->name }}">
+                                    <img src="{{ $p->primaryImage ? asset('storage/' . $p->primaryImage->image) : 'https://placehold.co/300x300/e5e7eb/9ca3af?text=' . urlencode($p->name) }}" loading="lazy" decoding="async" class="w-full h-full object-cover group-hover:scale-105 transition" alt="{{ $p->name }}">
                                 </div>
                                 <div class="p-2 text-center">
                                     <p class="font-semibold text-sm truncate" title="{{ $p->name }}">{{ $p->name }}</p>

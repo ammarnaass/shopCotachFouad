@@ -22,7 +22,7 @@
         <div class="flex items-center gap-4">
             <div class="w-16 h-16 rounded-2xl bg-white/20 backdrop-blur-md flex items-center justify-center text-3xl border border-white/30 overflow-hidden">
                 @if($category->image)
-                    <img src="{{ asset('storage/' . $category->image) }}" alt="{{ $category->name }}" class="w-full h-full object-cover">
+                    <img src="{{ asset('storage/' . $category->image) }}" alt="{{ $category->name }}" loading="lazy" decoding="async" class="w-full h-full object-cover">
                 @else
                     @categoryIcon($category->icon ?? 'local_offer', 'text-3xl text-white')
                 @endif

@@ -1,12 +1,12 @@
 @php
     $countries = config('ecommerce.countries', []);
-    $defaultCountry = $countries[config('ecommerce.shipping.default_country', 'SD')] ?? null;
+    $defaultCountry = $countries[config('ecommerce.shipping.default_country', 'DZ')] ?? null;
     $countryName = $defaultCountry['name'] ?? __t('footer.favorite_store');
 @endphp
 
 {{-- Newsletter section — hidden on auth pages --}}
 @php $isAuthPage = request()->is('*login') || request()->is('*register') || request()->routeIs('login') || request()->routeIs('register'); @endphp
-@if(site('show_newsletter', '1') === '1' && !$isAuthPage)
+@if(site('show_newsletter', '1') === '1' && !$isAuthPage && request()->routeIs('home'))
 <section class="relative overflow-hidden" style="background: linear-gradient(135deg, #1e3a8a 0%, #1d4ed8 50%, #7c3aed 100%);">
     <div class="absolute inset-0 overflow-hidden pointer-events-none">
         <div class="absolute -top-20 -right-20 w-72 h-72 bg-white/5 rounded-full blur-2xl"></div>
@@ -54,7 +54,7 @@
             <div class="col-span-2 lg:col-span-2">
                 <div class="mb-4">
                     @if(site('store_logo'))
-                        <img src="{{ site('store_logo') }}" alt="{{ site('store_name') }}" class="h-16 w-auto object-contain max-w-[250px] rounded-xl p-2">
+                        <img src="{{ site('store_logo') }}" alt="{{ site('store_name') }}" loading="lazy" decoding="async" class="h-16 w-auto object-contain max-w-[250px] rounded-xl p-2">
                     @else
                         <div class="flex items-center gap-3">
                             <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-brand-500 to-accent-500 flex items-center justify-center text-white shadow-lg">
@@ -71,39 +71,39 @@
                     {{ site('footer_about', __t('footer.about_store')) }}
                 </p>
                 @php
-                    $wa = preg_replace('/[^0-9]/', '', site('whatsapp_number') ?: site('store_phone'));
+                    $wa = preg_replace('/[^0-9]/', '', site('social_whatsapp', site('whatsapp_number')) ?: site('store_phone'));
                     $wa = ltrim($wa, '0');
                     if(strlen($wa) < 12) $wa = '213' . $wa;
                 @endphp
                 <div class="flex gap-2">
-                    @if(site('facebook_url'))
-                        <a href="{{ site('facebook_url') }}" target="_blank" rel="noopener" class="w-10 h-10 rounded-xl bg-gray-800 hover:bg-brand-600 flex items-center justify-center transition" title="Facebook">
+                    @if(site('social_facebook', site('facebook_url')))
+                        <a href="{{ site('social_facebook', site('facebook_url')) }}" target="_blank" rel="noopener" class="w-10 h-10 rounded-xl bg-gray-800 hover:bg-brand-600 flex items-center justify-center transition" title="Facebook">
                             <i class="fa-brands fa-facebook-f text-lg text-white"></i>
                         </a>
                     @endif
-                    @if(site('twitter_url'))
-                        <a href="{{ site('twitter_url') }}" target="_blank" rel="noopener" class="w-10 h-10 rounded-xl bg-gray-800 hover:bg-brand-400 flex items-center justify-center transition" title="Twitter">
+                    @if(site('social_twitter', site('twitter_url', site('x_url'))))
+                        <a href="{{ site('social_twitter', site('twitter_url', site('x_url'))) }}" target="_blank" rel="noopener" class="w-10 h-10 rounded-xl bg-gray-800 hover:bg-brand-400 flex items-center justify-center transition" title="Twitter">
                             <i class="fa-brands fa-x-twitter text-lg text-white"></i>
                         </a>
                     @endif
-                    @if(site('instagram_url'))
-                        <a href="{{ site('instagram_url') }}" target="_blank" rel="noopener" class="w-10 h-10 rounded-xl bg-gray-800 hover:bg-gradient-to-br hover:from-pink-500 hover:to-purple-500 flex items-center justify-center transition" title="Instagram">
+                    @if(site('social_instagram', site('instagram_url')))
+                        <a href="{{ site('social_instagram', site('instagram_url')) }}" target="_blank" rel="noopener" class="w-10 h-10 rounded-xl bg-gray-800 hover:bg-gradient-to-br hover:from-pink-500 hover:to-purple-500 flex items-center justify-center transition" title="Instagram">
                             <i class="fa-brands fa-instagram text-lg text-white"></i>
                         </a>
                     @endif
-                    @if(site('whatsapp_number'))
+                    @if(site('social_whatsapp', site('whatsapp_number')))
                         @php
-                            $wa = preg_replace('/[^0-9]/', '', site('whatsapp_number'));
+                            $wa = preg_replace('/[^0-9]/', '', site('social_whatsapp', site('whatsapp_number')));
                             $wa = ltrim($wa, '0');
                             // If number has no country code (len < 12), assume Algeria +213
                             if(strlen($wa) < 12) $wa = '213' . $wa;
                         @endphp
                         <a href="https://wa.me/{{ $wa }}" target="_blank" rel="noopener" class="w-10 h-10 rounded-xl bg-gray-800 hover:bg-green-600 flex items-center justify-center transition" title="WhatsApp">
-                            <img src="{{ asset('storage/icons/whatsapp.png') }}" alt="WhatsApp" class="h-5 w-5 object-contain">
+                            <img src="{{ asset('storage/icons/whatsapp.png') }}" alt="WhatsApp" loading="lazy" decoding="async" class="h-5 w-5 object-contain">
                         </a>
                     @endif
-                    @if(site('youtube_url'))
-                        <a href="{{ site('youtube_url') }}" target="_blank" rel="noopener" class="w-10 h-10 rounded-xl bg-gray-800 hover:bg-red-600 flex items-center justify-center transition" title="YouTube">
+                    @if(site('social_youtube', site('youtube_url')))
+                        <a href="{{ site('social_youtube', site('youtube_url')) }}" target="_blank" rel="noopener" class="w-10 h-10 rounded-xl bg-gray-800 hover:bg-red-600 flex items-center justify-center transition" title="YouTube">
                             <i class="fa-brands fa-youtube text-lg text-white"></i>
                         </a>
                     @endif
@@ -213,12 +213,12 @@
                             <p>{{ site('contact_address', $countryName) }}</p>
                         </div>
                     </li>
-                    @if(site('contact_hours'))
+                    @if(site('contact_working_hours', site('contact_hours')))
                         <li class="flex items-start gap-3">
                             <span class="material-symbols-outlined text-accent-400 mt-1">schedule</span>
                             <div>
                                 <p class="text-gray-400 text-xs">{{ __t('footer.working_hours') }}</p>
-                                <p>{{ site('contact_hours') }}</p>
+                                <p>{{ site('contact_working_hours', site('contact_hours')) }}</p>
                             </div>
                         </li>
                     @endif
