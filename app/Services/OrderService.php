@@ -2,43 +2,47 @@
 
 namespace App\Services;
 
-use App\Models\Order;
-use App\Models\OrderItem;
-use App\Models\Payment;
-use App\Models\ShippingAddress;
-use App\Models\ShippingCompany;
-use App\Models\ShippingZone;
-use App\Models\Coupon;
+use App\Data\Repositories\Contracts\OrderRepositoryInterface;
+use App\Models\Order\Order;
+use App\Models\Order\OrderItem;
+use App\Models\Order\Payment;
+use App\Models\Shipping\ShippingAddress;
+use App\Models\Shipping\ShippingZone;
 use App\Events\OrderStatusChanged;
 use Illuminate\Support\Facades\DB;
 
 class OrderService
 {
-    public function __construct(private CartService $cartService) {}
+    public function __construct(
+        private CartService $cartService,
+        private OrderRepositoryInterface $orders,
+    ) {}
 
-    public function calculateShipping(string $city, string $method = 'standard', float $subtotal = 0, ?string $countryCode = null, string $deliveryType = 'home', float $weight = 0, ?int $companyId = null): float
+    public function calculateShipping(string $city, string $method = 'standard', float $subtotal = 0, ?string $countryCode = null, string $deliveryType = 'home', float $weight = 0, ?int $companyId = null, ?string $stateCode = null): float
     {
-        // First try DB-stored zones (more flexible: company/delivery_type support)
+        $stateName = null;
+        if ($stateCode) {
+            $states = config("ecommerce.countries.{$countryCode}.states", config('ecommerce.countries.DZ.states', []));
+            $stateName = $states[$stateCode] ?? null;
+        }
+
         $zone = ShippingZone::where('status', 'active')
             ->when($companyId, fn($q) => $q->where('company_id', $companyId))
             ->get()
-            ->first(function ($z) use ($city, $countryCode, $deliveryType) {
-                return $z->isCityInZone($city, $countryCode) && $z->supportsDelivery($deliveryType);
+            ->first(function ($z) use ($city, $countryCode, $deliveryType, $stateName) {
+                return $z->isCityInZone($city, $countryCode, $stateName) && $z->supportsDelivery($deliveryType);
             });
 
         if ($zone) {
-            return $zone->calculateCost($city, $countryCode ?? '', $method, $deliveryType, $subtotal, $weight);
+            return $zone->calculateCost($city, $countryCode ?? '', $method, $deliveryType, $subtotal, $weight, $stateName);
         }
 
-        // If company was specified but no zone found, return 0 (don't fall back to another company)
         if ($companyId) {
             return 0;
         }
 
-        // Fall back to config-defined zones (legacy)
         $default = config('ecommerce.shipping.zones', []);
         foreach ($default as $z) {
-            // Country filter
             if (!empty($z['countries'])) {
                 if ($countryCode && !in_array('*', $z['countries']) && !in_array($countryCode, $z['countries'])) {
                     continue;
@@ -46,7 +50,8 @@ class OrderService
                 if (!$countryCode) continue;
             }
 
-            if (in_array('*', $z['cities'] ?? []) || in_array($city, $z['cities'] ?? [])) {
+            $cities = $z['cities'] ?? [];
+            if (in_array('*', $cities) || ($stateName && in_array($stateName, $cities)) || in_array($city, $cities)) {
                 $cost = $method === 'express' ? ($z['express_cost'] ?? 0) : ($z['cost'] ?? 0);
                 if (isset($z['free_threshold']) && $subtotal >= $z['free_threshold']) {
                     return 0;
@@ -82,7 +87,11 @@ class OrderService
                 $data['city'],
                 $data['shipping_method'] ?? 'standard',
                 $subtotal - $discount,
-                $data['country_code'] ?? null
+                $data['country_code'] ?? null,
+                'home',
+                0,
+                null,
+                $data['state_code'] ?? null
             );
 
             $codFee = 0;
@@ -97,7 +106,7 @@ class OrderService
                 'user_id' => auth()->id(),
                 'name' => $data['name'],
                 'phone' => $data['phone'],
-                'country_code' => $data['country_code'] ?? 'SD',
+                'country_code' => $data['country_code'] ?? 'DZ',
                 'state_code' => $data['state_code'] ?? null,
                 'city' => $data['city'],
                 'district' => $data['district'] ?? null,
@@ -106,7 +115,7 @@ class OrderService
                 'is_default' => $data['is_default'] ?? false,
             ]);
 
-            $order = Order::create([
+            $order = $this->orders->create([
                 'user_id' => auth()->id(),
                 'shipping_address_id' => $address->id,
                 'status' => 'pending',
@@ -121,6 +130,7 @@ class OrderService
                 'notes' => $data['notes'] ?? null,
                 'coupon_id' => $cart->coupon_id,
                 'shipping_method' => $data['shipping_method'] ?? 'standard',
+                'shipping_method_id' => Order::extractShippingMethodId($data['shipping_method'] ?? 'standard'),
             ]);
 
             foreach ($cart->items as $item) {
@@ -165,7 +175,6 @@ class OrderService
         $previousStatus = $order->status;
         $order->update(['status' => $status]);
 
-        // Fire event for notifications
         event(new OrderStatusChanged($order, $previousStatus, $status));
 
         return $order->fresh();
@@ -183,7 +192,6 @@ class OrderService
             'cancel_reason' => $reason,
         ]);
 
-        // Fire event for notifications
         event(new OrderStatusChanged($order, $previousStatus, 'cancelled'));
 
         foreach ($order->items as $item) {

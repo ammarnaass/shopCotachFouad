@@ -2,12 +2,14 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Coupon;
-use App\Models\InstantBuyOrder;
-use App\Models\InstantBuySetting;
-use App\Models\Product;
-use App\Models\ProductOptionValue;
-use App\Models\ShippingCompany;
+use App\Models\Catalog\Coupon;
+use App\Models\Catalog\Product;
+use App\Models\Catalog\ProductOptionValue;
+use App\Models\InstantBuy\InstantBuyOrder;
+use App\Models\InstantBuy\InstantBuySetting;
+use App\Models\Order\Order;
+use App\Models\Order\OrderItem;
+use App\Models\Shipping\ShippingAddress;
 use App\Services\DynamicShippingService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -44,7 +46,7 @@ class InstantBuyOrderController extends Controller
         $basePrice = $product->final_price;
         $optionsPrice = 0;
 
-        if (!empty($data['selected_options'])) {
+        if (! empty($data['selected_options'])) {
             $values = ProductOptionValue::whereIn('id', $data['selected_options'])->get();
             foreach ($values as $val) {
                 $optionsPrice += (float) ($val->price_adjustment ?? 0);
@@ -52,7 +54,7 @@ class InstantBuyOrderController extends Controller
         }
 
         $customFieldPrice = 0;
-        if (!empty($data['custom_text'])) {
+        if (! empty($data['custom_text'])) {
             $customFields = $product->customFields;
             $textField = $customFields->firstWhere('type', 'text') ?? $customFields->firstWhere('type', 'textarea');
             if ($textField) {
@@ -70,7 +72,7 @@ class InstantBuyOrderController extends Controller
         // Coupon discount
         $discount = 0;
         $coupon = null;
-        if (!empty($data['coupon_code'])) {
+        if (! empty($data['coupon_code'])) {
             $coupon = Coupon::where('code', $data['coupon_code'])->first();
             if ($coupon && $coupon->isValid($subtotal)) {
                 $discount = $coupon->calculateDiscount($subtotal);
@@ -136,7 +138,7 @@ class InstantBuyOrderController extends Controller
 
         foreach ($result['available'] as $item) {
             $options[] = [
-                'type' => $item['id'] ? 'method_' . $item['id'] : $item['type'],
+                'type' => $item['id'] ? 'method_'.$item['id'] : $item['type'],
                 'label' => $item['name'],
                 'method_id' => $item['id'],
                 'company_id' => $item['carrier_id'],
@@ -148,7 +150,7 @@ class InstantBuyOrderController extends Controller
                 'estimated_days' => $item['estimated_days'],
                 'pickup_location' => $item['pickup_location'],
             ];
-            if ($item['carrier_id'] && !isset($companies[$item['carrier_id']])) {
+            if ($item['carrier_id'] && ! isset($companies[$item['carrier_id']])) {
                 $companies[$item['carrier_id']] = [
                     'id' => $item['carrier_id'],
                     'name' => $item['carrier'],
@@ -172,14 +174,19 @@ class InstantBuyOrderController extends Controller
         ]);
 
         $coupon = Coupon::where('code', $data['code'])->first();
-        if (!$coupon) {
+        if (! $coupon) {
             return response()->json(['success' => false, 'message' => 'كود غير صالح'], 404);
         }
-        if (!$coupon->isValid((float) $data['subtotal'])) {
+        if (! $coupon->isValid((float) $data['subtotal'])) {
             $msg = 'كوبون غير صالح';
-            if ($coupon->expiry_date && $coupon->expiry_date->isPast()) $msg = 'الكوبون منتهي الصلاحية';
-            elseif ($coupon->usage_limit && $coupon->used_count >= $coupon->usage_limit) $msg = 'تم استنفاد الكوبون';
-            elseif ($coupon->min_order && $data['subtotal'] < $coupon->min_order) $msg = "الحد الأدنى للطلب {$coupon->min_order}";
+            if ($coupon->expiry_date && $coupon->expiry_date->isPast()) {
+                $msg = 'الكوبون منتهي الصلاحية';
+            } elseif ($coupon->usage_limit && $coupon->used_count >= $coupon->usage_limit) {
+                $msg = 'تم استنفاد الكوبون';
+            } elseif ($coupon->min_order && $data['subtotal'] < $coupon->min_order) {
+                $msg = "الحد الأدنى للطلب {$coupon->min_order}";
+            }
+
             return response()->json(['success' => false, 'message' => $msg], 422);
         }
 
@@ -210,24 +217,33 @@ class InstantBuyOrderController extends Controller
             'selected_options' => 'nullable|array',
             'selected_options.*' => 'exists:product_option_values,id',
             'custom_text' => 'nullable|string|max:500',
-            'phone' => 'required|string|max:20',
-            'country_code' => 'required|string|size:2',
             'state_code' => 'nullable|string|max:20',
-            'city' => 'required|string|max:100',
-            'address' => 'required|string',
+            'district' => 'nullable|string|max:100',
+            'zip' => 'nullable|string|max:20',
+            'email' => 'nullable|email|max:255',
             'notes' => 'nullable|string',
             'coupon_code' => 'nullable|string|max:50',
             'shipping_method_type' => 'nullable|string|max:50',
             'shipping_cost' => 'nullable|numeric|min:0',
             'delivery_type' => 'nullable|string|max:20',
+            'shipping_company_id' => 'nullable|exists:shipping_companies,id',
         ];
 
-        if ($settings->field_first_name_required || $settings->field_first_name_enabled) {
-            $rules['first_name'] = $settings->field_first_name_required ? 'required|string|max:100' : 'nullable|string|max:100';
-        }
-        if ($settings->field_last_name_required || $settings->field_last_name_enabled) {
-            $rules['last_name'] = $settings->field_last_name_required ? 'required|string|max:100' : 'nullable|string|max:100';
-        }
+        // Core customer/address fields are only validated when enabled (or marked required) in settings.
+        $addFieldRule = function (string $field, string $base) use (&$rules, $settings): void {
+            $enabled = $settings->{'field_'.$field.'_enabled'};
+            $required = $settings->{'field_'.$field.'_required'};
+            if ($enabled || $required) {
+                $rules[$field] = ($required ? 'required|' : 'nullable|').$base;
+            }
+        };
+
+        $addFieldRule('phone', 'string|max:20');
+        $addFieldRule('country_code', 'string|size:2');
+        $addFieldRule('city', 'string|max:100');
+        $addFieldRule('address', 'string');
+        $addFieldRule('first_name', 'string|max:100');
+        $addFieldRule('last_name', 'string|max:100');
 
         $data = $request->validate($rules);
 
@@ -237,7 +253,7 @@ class InstantBuyOrderController extends Controller
         // Calculate prices server-side
         $basePrice = $product->final_price;
         $optionsPrice = 0;
-        if (!empty($data['selected_options'])) {
+        if (! empty($data['selected_options'])) {
             $values = ProductOptionValue::whereIn('id', $data['selected_options'])->get();
             foreach ($values as $val) {
                 $optionsPrice += (float) ($val->price_adjustment ?? 0);
@@ -252,7 +268,9 @@ class InstantBuyOrderController extends Controller
         $couponCode = $data['coupon_code'] ?? null;
         if ($couponCode) {
             $coupon = Coupon::where('code', $couponCode)->where('is_active', true)
-                ->where(function ($q) { $q->whereNull('expires_at')->orWhere('expires_at', '>=', now()); })
+                ->where(function ($q) {
+                    $q->whereNull('expires_at')->orWhere('expires_at', '>=', now());
+                })
                 ->first();
             if ($coupon) {
                 $discount = $coupon->discount($subtotal + $shippingCost);
@@ -262,7 +280,7 @@ class InstantBuyOrderController extends Controller
         $grandTotal = max(0, $subtotal + $shippingCost - $discount);
 
         // Generate order number
-        $orderNumber = 'IB-' . strtoupper(Str::random(8));
+        $orderNumber = 'IB-'.strtoupper(Str::random(8));
 
         try {
             DB::beginTransaction();
@@ -272,17 +290,17 @@ class InstantBuyOrderController extends Controller
                 'user_id' => auth()->id(),
                 'first_name' => $data['first_name'] ?? 'ضيف',
                 'last_name' => $data['last_name'] ?? '',
-                'phone' => $data['phone'],
+                'phone' => $data['phone'] ?? null,
                 'email' => auth()->user()?->email,
-                'country_code' => $data['country_code'],
+                'country_code' => $data['country_code'] ?? null,
                 'state_code' => $data['state_code'] ?? null,
-                'city' => $data['city'],
-                'address' => $data['address'],
+                'city' => $data['city'] ?? null,
+                'address' => $data['address'] ?? null,
                 'notes' => $data['notes'] ?? null,
                 'product_id' => $product->id,
                 'variant_id' => $data['variant_id'] ?? null,
                 'quantity' => $quantity,
-                'options' => !empty($data['selected_options']) ? $data['selected_options'] : null,
+                'options' => ! empty($data['selected_options']) ? $data['selected_options'] : null,
                 'custom_text' => $data['custom_text'] ?? null,
                 'product_price' => round($basePrice * $quantity, 2),
                 'options_price' => round($optionsPrice * $quantity, 2),
@@ -297,6 +315,59 @@ class InstantBuyOrderController extends Controller
                 'payment_method' => 'cod',
                 'status' => 'new',
                 'payment_status' => 'pending',
+            ]);
+
+            // Create a unified Order record so the purchase appears in the main admin orders list
+            // (the orders view already supports the instant-buy "type" badge via is_instant_buy).
+            $shippingAddress = ShippingAddress::create([
+                'user_id' => auth()->id(),
+                'first_name' => $data['first_name'] ?? null,
+                'last_name' => $data['last_name'] ?? null,
+                'name' => trim(($data['first_name'] ?? '').' '.($data['last_name'] ?? '')) ?: null,
+                'phone' => $data['phone'] ?? null,
+                'email' => $data['email'] ?? auth()->user()?->email,
+                'country_code' => $data['country_code'] ?? null,
+                'state_code' => $data['state_code'] ?? null,
+                'city' => $data['city'] ?? null,
+                'district' => $data['district'] ?? null,
+                'address' => $data['address'] ?? null,
+                'zip' => $data['zip'] ?? null,
+            ]);
+
+            $orderRecord = Order::create([
+                'user_id' => auth()->id(),
+                'guest_email' => $data['email'] ?? auth()->user()?->email,
+                'guest_phone' => $data['phone'] ?? null,
+                'is_instant_buy' => true,
+                'order_number' => $orderNumber,
+                'status' => 'pending',
+                'payment_status' => 'pending',
+                'shipping_status' => 'pending',
+                'subtotal' => $subtotal,
+                'shipping_cost' => $shippingCost,
+                'discount' => $discount,
+                'tax' => 0,
+                'cod_fee' => 0,
+                'grand_total' => $grandTotal,
+                'notes' => $data['notes'] ?? null,
+                'shipping_address_id' => $shippingAddress->id,
+                'shipping_company_id' => $data['shipping_company_id'] ?? null,
+                'shipping_method' => $data['shipping_method_type'] ?? 'standard',
+                'shipping_method_id' => Order::extractShippingMethodId($data['shipping_method_type'] ?? 'standard'),
+                'delivery_type' => $data['delivery_type'] ?? 'home',
+                'coupon_id' => ($couponCode && isset($coupon)) ? $coupon->id : null,
+            ]);
+
+            OrderItem::create([
+                'order_id' => $orderRecord->id,
+                'product_id' => $product->id,
+                'product_name' => $product->name,
+                'product_sku' => $product->sku,
+                'quantity' => $quantity,
+                'price' => $basePrice + $optionsPrice,
+                'total' => ($basePrice + $optionsPrice) * $quantity,
+                'options' => $data['selected_options'] ?? null,
+                'custom_text' => $data['custom_text'] ?? null,
             ]);
 
             // Decrement stock
@@ -320,7 +391,8 @@ class InstantBuyOrderController extends Controller
             ]);
         } catch (\Throwable $e) {
             DB::rollBack();
-            Log::error('InstantBuyOrder failed: ' . $e->getMessage());
+            Log::error('InstantBuyOrder failed: '.$e->getMessage());
+
             return response()->json([
                 'success' => false,
                 'message' => 'حدث خطأ أثناء معالجة الطلب. حاول مرة أخرى.',
@@ -330,15 +402,20 @@ class InstantBuyOrderController extends Controller
 
     private function whatsappUrl(InstantBuySetting $settings, InstantBuyOrder $order): ?string
     {
-        if (!$settings->success_show_whatsapp_button) return null;
+        if (! $settings->success_show_whatsapp_button) {
+            return null;
+        }
         $phone = config('ecommerce.store.phone', '');
-        if (!$phone) return null;
+        if (! $phone) {
+            return null;
+        }
         $message = str_replace(
             ['{order_number}', '{customer_name}', '{total}'],
-            [$order->order_number, $order->first_name . ' ' . $order->last_name, $order->grand_total],
+            [$order->order_number, $order->first_name.' '.$order->last_name, $order->grand_total],
             $settings->success_whatsapp_message
         );
         $phone = preg_replace('/[^0-9]/', '', $phone);
-        return 'https://wa.me/' . $phone . '?text=' . urlencode($message);
+
+        return 'https://wa.me/'.$phone.'?text='.urlencode($message);
     }
 }
