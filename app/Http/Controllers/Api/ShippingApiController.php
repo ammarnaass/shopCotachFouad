@@ -72,9 +72,22 @@ class ShippingApiController extends Controller
         }
 
         // Legacy: calculate by city name
+        // دعم توافقي: قبول country_code نصي أو country_id رقمي
+        $countryCode = $request->input('country_code');
+        if (!$countryCode && $request->filled('country_id')) {
+            // حوّل ID رقمي → كود نصي عبر الـ config
+            $countries = config('ecommerce.countries', []);
+            foreach ($countries as $code => $info) {
+                if (isset($info['id']) && (int) $info['id'] === (int) $request->country_id) {
+                    $countryCode = $code;
+                    break;
+                }
+            }
+        }
+
         $zone = ShippingZone::where('status', 'active')
             ->get()
-            ->first(fn ($z) => $z->isCityInZone($request->city ?? '', $request->country_code ?? ''));
+            ->first(fn ($z) => $z->isCityInZone($request->city ?? '', $countryCode ?? ''));
 
         $cost = 0;
         $zoneName = null;
@@ -87,7 +100,7 @@ class ShippingApiController extends Controller
             $deliveryType = $request->delivery_type ?? 'home';
             $cost = $zone->calculateCost(
                 $request->city ?? '',
-                $request->country_code ?? '',
+                $countryCode ?? '',
                 $method,
                 $deliveryType,
                 $request->subtotal ?? 0,
@@ -100,26 +113,26 @@ class ShippingApiController extends Controller
                 $mCost = $m->calculateCost($request->weight ?? 0, $request->subtotal ?? 0, $request->items ?? []);
                 if ($mCost !== null) {
                     $options[] = [
-                        'id' => $m->id,
-                        'name' => $m->name,
-                        'type' => $m->type,
-                        'type_label' => $m->getTypeLabel(),
-                        'carrier' => $m->carrier?->name,
-                        'cost' => $mCost,
+                        'id'             => $m->id,
+                        'name'           => $m->name,
+                        'type'           => $m->type,
+                        'type_label'     => $m->getTypeLabel(),
+                        'carrier'        => $m->carrier?->name,
+                        'cost'           => $mCost,
                         'estimated_days' => $m->estimated_days,
-                        'is_free' => $mCost == 0,
+                        'is_free'        => $mCost == 0,
                     ];
                 }
             }
         }
 
         return response()->json([
-            'success' => true,
-            'zone' => $zoneName,
-            'cost' => $cost,
-            'is_free' => $cost === 0,
+            'success'        => true,
+            'zone'           => $zoneName,
+            'cost'           => $cost,
+            'is_free'        => $cost === 0,
             'estimated_days' => $estimatedDays,
-            'options' => $options,
+            'options'        => $options,
         ]);
     }
 

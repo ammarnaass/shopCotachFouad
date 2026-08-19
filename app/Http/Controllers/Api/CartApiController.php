@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Exceptions\NoShippingZoneException;
 use App\Services\CartService;
 use App\Services\OrderService;
 use Illuminate\Http\JsonResponse;
@@ -73,17 +74,31 @@ class CartApiController extends Controller
             'method' => 'nullable|in:standard,express',
         ]);
         $cart = $this->cartService->getCart();
-        $cost = $this->orderService->calculateShipping(
-            $request->city,
-            $request->method ?? 'standard',
-            $cart->subtotal - $cart->discount,
-            null,
-            'home',
-            0,
-            null,
-            $request->state_code
-        );
 
-        return response()->json(['success' => true, 'shipping_cost' => $cost, 'is_free' => $cost === 0]);
+        try {
+            $cost = $this->orderService->calculateShipping(
+                $request->city,
+                $request->method ?? 'standard',
+                $cart->subtotal - $cart->discount,
+                null,
+                'home',
+                0,
+                null,
+                $request->state_code
+            );
+
+            return response()->json([
+                'success'       => true,
+                'shipping_cost' => $cost,
+                'is_free'       => $cost === 0,
+            ]);
+        } catch (NoShippingZoneException $e) {
+            // لا نُرجع 200 مع شحن = 0 — نمنع إتمام الطلب بوضوح
+            return response()->json([
+                'success'    => false,
+                'error_code' => 'SHIPPING_UNAVAILABLE',
+                'message'    => 'عذرًا، الشحن لمنطقتك غير متاح حاليًا. يرجى التواصل معنا أو اختيار مدينة أخرى.',
+            ], 422);
+        }
     }
 }

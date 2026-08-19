@@ -15,6 +15,7 @@ use App\Services\ShippingCalculator;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
 use Illuminate\View\View;
 
 class ShippingController extends Controller
@@ -100,7 +101,14 @@ class ShippingController extends Controller
     {
         $data = $this->validateZone($request);
         $data['regions'] = $data['regions'] ?? [];
-        ShippingZone::create($data);
+
+        DB::transaction(function () use ($data) {
+            if (!empty($data['is_default'])) {
+                // صفّر أي منطقة افتراضية سابقة قبل إنشاء الجديدة
+                ShippingZone::where('is_default', true)->update(['is_default' => false]);
+            }
+            ShippingZone::create($data);
+        });
 
         return redirect()->route('admin.shipping.index', ['tab' => 'zones'])->with('success', 'تم إضافة منطقة الشحن بنجاح');
     }
@@ -117,7 +125,16 @@ class ShippingController extends Controller
     {
         $data = $this->validateZone($request);
         $data['regions'] = $data['regions'] ?? [];
-        $zone->update($data);
+
+        DB::transaction(function () use ($data, $zone) {
+            if (!empty($data['is_default'])) {
+                // صفّر أي منطقة افتراضية سابقة (غير هذه) قبل التحديث
+                ShippingZone::where('id', '!=', $zone->id)
+                    ->where('is_default', true)
+                    ->update(['is_default' => false]);
+            }
+            $zone->update($data);
+        });
 
         return redirect()->route('admin.shipping.index', ['tab' => 'zones'])->with('success', 'تم تحديث منطقة الشحن بنجاح');
     }

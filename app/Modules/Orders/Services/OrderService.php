@@ -3,6 +3,7 @@
 namespace App\Modules\Orders\Services;
 
 use App\Data\Repositories\Contracts\OrderRepositoryInterface;
+use App\Exceptions\NoShippingZoneException;
 use App\Modules\Cart\Services\CartService;
 use App\Modules\Orders\Models\Order;
 use App\Modules\Orders\Models\OrderItem;
@@ -11,6 +12,7 @@ use App\Modules\Shipping\Models\ShippingAddress;
 use App\Modules\Shipping\Models\ShippingZone;
 use App\Events\OrderStatusChanged;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class OrderService
 {
@@ -60,7 +62,38 @@ class OrderService
                 return (float) $cost;
             }
         }
-        return 0;
+
+        // سجّل دائمًا أي مدينة غير مغطاة — حتى لو وُجد fallback لاحقًا
+        Log::warning('shipping.zone_not_found', [
+            'city'    => $city,
+            'country' => $countryCode ?? null,
+            'method'  => $method ?? null,
+        ]);
+
+        // خط الدفاع الأخير: منطقة افتراضية حقيقية من قاعدة البيانات
+        $fallbackZone = ShippingZone::where('is_default', true)
+            ->where('status', 'active')
+            ->first();
+
+        if ($fallbackZone) {
+            Log::warning('shipping.using_default_zone_fallback', [
+                'city'    => $city,
+                'zone_id' => $fallbackZone->id,
+            ]);
+
+            return $fallbackZone->calculateCost(
+                $city,
+                $countryCode ?? '',
+                $method,
+                $deliveryType,
+                $subtotal,
+                $weight,
+                $stateName
+            );
+        }
+
+        // ولا حتى منطقة افتراضية → امنع الطلب، لا تُرجع صفرًا أبدًا
+        throw new NoShippingZoneException($city, $countryCode ?? null);
     }
 
     public function calculateCodFee(float $orderTotal): float

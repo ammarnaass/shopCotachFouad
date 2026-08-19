@@ -67,6 +67,27 @@
                     <textarea name="description" rows="3" placeholder="{{ __t('admin.shipping.zone_name_placeholder') }}..."
                               class="w-full bg-surface-container-lowest border border-outline-variant rounded-lg p-3 font-body-md focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all">{{ old('description', $zone->description ?? '') }}</textarea>
                 </div>
+
+                {{-- المنطقة الافتراضية --}}
+                <div class="md:col-span-2">
+                    <label class="flex items-start gap-3 p-4 rounded-xl border cursor-pointer transition-all
+                        {{ old('is_default', $zone->is_default ?? false) ? 'border-warning bg-warning/5' : 'border-outline-variant hover:bg-surface-container-high' }}">
+                        <input type="hidden" name="is_default" value="0">
+                        <input type="checkbox" name="is_default" value="1"
+                               id="is_default_checkbox"
+                               {{ old('is_default', $zone->is_default ?? false) ? 'checked' : '' }}
+                               class="mt-0.5 w-5 h-5 rounded text-warning border-outline-variant focus:ring-warning transition-all shrink-0">
+                        <div>
+                            <span class="font-label-md text-label-md font-semibold text-on-surface block">
+                                اجعلها المنطقة الافتراضية
+                            </span>
+                            <span class="text-[11px] text-outline block mt-0.5">
+                                تُستخدم تلقائيًا عندما لا تطابق مدينة الزبون أي منطقة شحن أخرى معرّفة.
+                                يمكن أن تكون منطقة واحدة فقط افتراضية بنفس الوقت.
+                            </span>
+                        </div>
+                    </label>
+                </div>
             </div>
 
             <hr class="border-outline-variant/30">
