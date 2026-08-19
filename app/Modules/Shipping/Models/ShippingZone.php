@@ -131,21 +131,58 @@ class ShippingZone extends Model
         }
 
         // City/State filter
-        $cities = $this->cities ?? $this->regions ?? [];
-        if (empty($cities)) {
+        $citiesData = $this->cities ?? $this->regions ?? [];
+        if (empty($citiesData)) {
             return true;
         } // empty = all cities match
-        if (in_array('*', $cities)) {
+
+        $cities = [];
+        if (is_array($citiesData)) {
+            if ($countryCode && isset($citiesData[$countryCode]) && is_array($citiesData[$countryCode])) {
+                $cities = $citiesData[$countryCode];
+            } elseif (isset($citiesData['*']) && is_array($citiesData['*'])) {
+                $cities = $citiesData['*'];
+            } else {
+                foreach ($citiesData as $k => $v) {
+                    if (is_array($v)) {
+                        $cities = array_merge($cities, $v);
+                    } else {
+                        $cities[] = $v;
+                    }
+                }
+            }
+        } elseif (is_string($citiesData)) {
+            $cities = array_map('trim', explode(',', $citiesData));
+        }
+
+        if (empty($cities) || in_array('*', $cities)) {
             return true;
         }
 
-        // Check if state name matches any city in the zone
+        // Check if city matches directly
+        if (in_array($city, $cities)) {
+            return true;
+        }
+
+        // Check if state name matches
         if ($stateName && in_array($stateName, $cities)) {
             return true;
         }
 
-        // Fallback: check city name
-        return in_array($city, $cities);
+        // Resolve code to name or name to code for supported countries
+        if ($countryCode && config("ecommerce.countries.{$countryCode}.states")) {
+            $states = config("ecommerce.countries.{$countryCode}.states", []);
+            $nameFromCode = $states[$city] ?? null;
+            if ($nameFromCode && in_array($nameFromCode, $cities)) {
+                return true;
+            }
+            $codeFromName = array_search($city, $states);
+            if ($codeFromName !== false && in_array($codeFromName, $cities)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     public function estimatedDays(string $method = 'standard'): ?string
