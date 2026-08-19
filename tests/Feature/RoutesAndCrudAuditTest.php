@@ -75,6 +75,9 @@ class RoutesAndCrudAuditTest extends TestCase
         if ($product) {
             $response = $this->get('/ar/admin/products/' . $product->id . '/edit');
             $response->assertStatus(200);
+
+            $response = $this->get('/ar/admin/products/' . ($product->slug ?: $product->id) . '/gallery');
+            $response->assertStatus(200);
         }
 
         // Categories

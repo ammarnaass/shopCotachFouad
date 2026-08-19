@@ -26,6 +26,14 @@ class ProductController extends Controller
 
     public const IMAGE_MIMES = 'jpeg,jpg,png,webp,gif';
 
+    public const IMAGE_RECOMMENDED_W = 800;
+
+    public const IMAGE_RECOMMENDED_H = 800;
+
+    public const IMAGE_MIN_WIDTH = 300;
+
+    public const IMAGE_MIN_HEIGHT = 300;
+
     public function index(Request $request): View
     {
         $query = Product::with('category', 'primaryImage');
