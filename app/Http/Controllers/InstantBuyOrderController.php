@@ -125,9 +125,9 @@ class InstantBuyOrderController extends Controller
         $supported = $this->shippingService->getSupportedDeliveryTypes(
             $data['product_id'], $data['country_code'], $data['city']
         );
-        $deliveryType = ($data['delivery_type'] && in_array($data['delivery_type'], $supported))
+        $deliveryType = (!empty($data['delivery_type']) && in_array($data['delivery_type'], $supported))
             ? $data['delivery_type']
-            : $supported[0];
+            : ($supported[0] ?? 'home');
 
         $result = $this->shippingService->getAvailableMethods(
             $data['product_id'], $data['country_code'], $data['city'], $deliveryType

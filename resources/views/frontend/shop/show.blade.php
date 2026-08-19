@@ -70,6 +70,8 @@
         'customFieldPrice' => (float) ($product->customFields->whereIn('type', ['text', 'textarea'])->first()?->price_effect ?? 0),
         'categoryName' => $product->category?->name,
         'categorySlug' => $product->category?->slug,
+        'shortDescription' => $product->short_description ?? '',
+        'discountPercent' => $product->discount_percent ?? 0,
         'storeCountry' => config('ecommerce.store.default_country', 'DZ'),
         'validationRules' => collect([
             ['field' => 'countryCode', 'enabled' => $ibS('field_country_enabled'), 'required' => $ibS('field_country_required')],
@@ -234,8 +236,8 @@
                             {{-- Price (live) --}}
                             <div class="flex items-baseline gap-3 mb-4 flex-wrap">
                                 <span class="text-3xl font-extrabold text-blue-600 price-pulse" :key="grandTotal">
-                                    <span x-text="formatMoney(displayPrice)"></span>
-                                    <span x-text="currencySymbol"></span>
+                                    <span x-text="formatMoney(displayPrice)">{{ number_format(convertPrice($product->final_price), 0) }}</span>
+                                    <span x-text="currencySymbol">{{ $countrySymbol }}</span>
                                 </span>
                                 <template x-if="product.salePrice && product.salePrice > 0 && product.salePrice < product.basePrice">
                                     <span class="text-lg text-gray-400 line-through" x-text="formatMoney(product.basePrice) + ' ' + currencySymbol"></span>
@@ -247,14 +249,14 @@
                                 </template>
                             </div>
 
-                            <template x-if="product.shortDescription">
-                                <p class="text-gray-600 text-sm leading-relaxed mb-4" x-text="product.shortDescription"></p>
-                            </template>
+                            @if($product->short_description)
+                                <p class="text-gray-600 text-sm leading-relaxed mb-4" x-text="product.shortDescription || '{{ addslashes($product->short_description) }}'">{{ $product->short_description }}</p>
+                            @endif
 
                             {{-- Stock --}}
                             <div class="flex items-center gap-2 mb-4 text-sm">
                                 <span class="material-symbols-outlined text-green-500">check_circle</span>
-                                <span class="text-gray-700">{{ __t('shop.show.in_stock') }} (<span x-text="product.stock"></span> {{ __t('shop.show.pieces') }})</span>
+                                <span class="text-gray-700">{{ __t('shop.show.in_stock') }} (<span x-text="product.stock">{{ $product->stock }}</span> {{ __t('shop.show.pieces') }})</span>
                             </div>
 
                             {{-- Quantity --}}
@@ -943,40 +945,86 @@ function instantBuyForm() {
             return true;
         },
 
-        setup(id, name, basePrice, finalPrice, salePrice, images, stock, sku, weight, countries, defaultCountry, defaultState, defaultSymbol, authUser, conversionRate, ibEnabled) {
-            this.ibEnabled = ibEnabled;
-            this.product.id = id;
-            this.product.name = name;
-            this.product.basePrice = parseFloat(basePrice) || 0;
-            this.product.finalPrice = parseFloat(finalPrice) || parseFloat(basePrice) || 0;
-            this.product.salePrice = parseFloat(salePrice) || 0;
-            this.product.stock = parseInt(stock) || 0;
-            this.product.sku = sku || '';
-            this.product.weight = parseFloat(weight) || 0;
-            this.product.discountPercent = this.product.basePrice > 0 && this.product.salePrice > 0 && this.product.salePrice < this.product.basePrice
-                ? Math.round(100 - (this.product.salePrice / this.product.basePrice) * 100)
-                : 0;
-            this.images = images || [];
-            this.countries = countries || {};
-            this.countryCode = defaultCountry || 'DZ';
-            this.currentStates = (this.countries[this.countryCode]?.states) || {};
-            this.stateCode = defaultState || '';
-            this.currencySymbol = countries[defaultCountry]?.currency_symbol || defaultSymbol || '{{ __t('common.currency') }}';
-            this.dialCode = countries[defaultCountry]?.dial_code || '+213';
-            this.conversionRate = parseFloat(conversionRate) || 1;
-            this.storeCountry = '@json(config('ecommerce.store.default_country', 'DZ'))';
-            this.authUser = authUser || null;
-            @if($product->category)
-            this.product.categoryName = @json($product->category->name);
-            this.product.categorySlug = @json($product->category->slug);
-            @endif
-            // Pre-fill user data
-            if (authUser && authUser.name) {
-                const parts = authUser.name.split(' ');
-                this.form.first_name = parts[0] || '';
-                this.form.last_name = parts.slice(1).join(' ') || '';
-                this.form.email = authUser.email || '';
-                this.form.phone = authUser.phone || '';
+        setup(config, name, basePrice, finalPrice, salePrice, images, stock, sku, weight, countries, defaultCountry, defaultState, defaultSymbol, authUser, conversionRate, ibEnabled) {
+            if (typeof config === 'object' && config !== null && !Array.isArray(config)) {
+                this.ibEnabled = config.ibEnabled !== undefined ? config.ibEnabled : true;
+                this.product.id = config.id;
+                this.product.name = config.name || '';
+                this.product.basePrice = parseFloat(config.basePrice) || 0;
+                this.product.finalPrice = parseFloat(config.finalPrice) || parseFloat(config.basePrice) || 0;
+                this.product.salePrice = parseFloat(config.salePrice) || 0;
+                this.product.stock = parseInt(config.stock) || 0;
+                this.product.sku = config.sku || '';
+                this.product.weight = parseFloat(config.weight) || 0;
+                this.product.categoryName = config.categoryName || '';
+                this.product.categorySlug = config.categorySlug || '';
+                this.product.shortDescription = config.shortDescription || '';
+                this.product.discountPercent = config.discountPercent !== undefined
+                    ? parseInt(config.discountPercent)
+                    : (this.product.basePrice > 0 && this.product.salePrice > 0 && this.product.salePrice < this.product.basePrice
+                        ? Math.round(100 - (this.product.salePrice / this.product.basePrice) * 100)
+                        : 0);
+                this.images = config.images || [];
+                this.countries = config.countries || {};
+                this.countryCode = config.defaultCountry || 'DZ';
+                this.currentStates = (this.countries[this.countryCode]?.states) || {};
+                this.stateCode = config.defaultState || '';
+                this.currencySymbol = this.countries[this.countryCode]?.currency_symbol || config.defaultSymbol || '{{ __t('common.currency') }}';
+                this.dialCode = this.countries[this.countryCode]?.dial_code || '+213';
+                this.conversionRate = parseFloat(config.conversionRate) || 1;
+                this.storeCountry = config.storeCountry || 'DZ';
+                this.authUser = config.authUser || null;
+                if (config.selectedOptions) {
+                    this.selectedOptions = config.selectedOptions;
+                }
+                if (config.optionsAdjustments) {
+                    this.optionsAdjustments = config.optionsAdjustments;
+                }
+                if (config.customFieldPrice !== undefined) {
+                    this.customFieldPrice = parseFloat(config.customFieldPrice) || 0;
+                }
+                if (this.authUser && this.authUser.name) {
+                    const parts = this.authUser.name.split(' ');
+                    this.form.first_name = parts[0] || '';
+                    this.form.last_name = parts.slice(1).join(' ') || '';
+                    this.form.email = this.authUser.email || '';
+                    this.form.phone = this.authUser.phone || '';
+                }
+            } else {
+                this.ibEnabled = ibEnabled;
+                this.product.id = config;
+                this.product.name = name;
+                this.product.basePrice = parseFloat(basePrice) || 0;
+                this.product.finalPrice = parseFloat(finalPrice) || parseFloat(basePrice) || 0;
+                this.product.salePrice = parseFloat(salePrice) || 0;
+                this.product.stock = parseInt(stock) || 0;
+                this.product.sku = sku || '';
+                this.product.weight = parseFloat(weight) || 0;
+                this.product.discountPercent = this.product.basePrice > 0 && this.product.salePrice > 0 && this.product.salePrice < this.product.basePrice
+                    ? Math.round(100 - (this.product.salePrice / this.product.basePrice) * 100)
+                    : 0;
+                this.images = images || [];
+                this.countries = countries || {};
+                this.countryCode = defaultCountry || 'DZ';
+                this.currentStates = (this.countries[this.countryCode]?.states) || {};
+                this.stateCode = defaultState || '';
+                this.currencySymbol = countries[defaultCountry]?.currency_symbol || defaultSymbol || '{{ __t('common.currency') }}';
+                this.dialCode = countries[defaultCountry]?.dial_code || '+213';
+                this.conversionRate = parseFloat(conversionRate) || 1;
+                this.storeCountry = '@json(config('ecommerce.store.default_country', 'DZ'))';
+                this.authUser = authUser || null;
+                @if($product->category)
+                this.product.categoryName = @json($product->category->name);
+                this.product.categorySlug = @json($product->category->slug);
+                @endif
+                // Pre-fill user data
+                if (authUser && authUser.name) {
+                    const parts = authUser.name.split(' ');
+                    this.form.first_name = parts[0] || '';
+                    this.form.last_name = parts.slice(1).join(' ') || '';
+                    this.form.email = authUser.email || '';
+                    this.form.phone = authUser.phone || '';
+                }
             }
 
             // Initial calculation + shipping options

@@ -28,6 +28,10 @@ return Application::configure(basePath: dirname(__DIR__))
         // (they are protected by rate limiting + validation)
         $middleware->validateCsrfTokens(except: [
             'instant/*',
+            '*/instant/*',
+            'instant-buy/*',
+            '*/instant-buy/*',
+            'api/*',
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
