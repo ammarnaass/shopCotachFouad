@@ -167,6 +167,7 @@ Route::prefix('{locale?}')->whereIn('locale', ['ar', 'en', 'fr'])->middleware('l
 
     // Cart (guest + auth)
     Route::get('/cart', [CartController::class, 'index'])->name('cart.index');
+    Route::get('/checkout', [App\Modules\Checkout\Http\Controllers\CheckoutController::class, 'index'])->name('checkout.index');
     Route::post('/cart', [CartController::class, 'add'])->name('cart.add');
     Route::patch('/cart/{item}', [CartController::class, 'update'])->name('cart.update');
     Route::delete('/cart/{item}', [CartController::class, 'destroy'])->name('cart.destroy');

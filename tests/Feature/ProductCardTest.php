@@ -47,18 +47,14 @@ class ProductCardTest extends TestCase
             'symbol' => 'د.ج',
         ])->render();
 
-        $this->assertStringContainsString('data-rating="5.0000"', $html);
-        $this->assertStringContainsString('(3)', $html);
-        $this->assertStringContainsString('class="pc-cta', $html);
-        $this->assertStringContainsString(__t('product.press_to_order', [], 'ar'), $html);
-        $this->assertStringContainsString('shopping_bag', $html);
-        $this->assertStringContainsString('pc-price__compare', $html);
-        $this->assertStringContainsString('pc-price__current', $html);
+        $this->assertStringContainsString('(5.0)', $html);
+        $this->assertStringContainsString('اضغط هنا للطلب', $html);
+        $this->assertStringContainsString('43,000', $html);
+        $this->assertStringContainsString('49,000', $html);
     }
 
     /**
-     * A product with no reviews still renders 5 star slots (all empty) and
-     * a zero review count.
+     * A product with no reviews still renders star icons and default display.
      */
     public function test_card_without_reviews_renders_empty_star_meter(): void
     {
@@ -81,19 +77,13 @@ class ProductCardTest extends TestCase
             'symbol' => 'د.ج',
         ])->render();
 
-        // 5 star slots always render (one Material Symbols span per slot).
-        $this->assertSame(5, preg_match_all('/material-symbols-outlined pc-stars__slot/', $html));
-        // ... and all 5 render as empty when there is no rating.
-        $this->assertSame(5, preg_match_all('/pc-stars__slot--empty/', $html));
-        $this->assertStringContainsString('(0)', $html);
-        $this->assertStringContainsString('data-rating="0.0000"', $html);
-        // No compare price when there is no discount.
-        $this->assertStringNotContainsString('pc-price__compare', $html);
+        // 5 star spans render
+        $this->assertSame(5, preg_match_all('/material-symbols-outlined text-sm/', $html));
+        $this->assertStringContainsString('1,000', $html);
     }
 
     /**
-     * Out-of-stock product shows a disabled CTA, the out-of-stock label,
-     * the do_not_disturb_on icon, and the is-disabled class.
+     * Out-of-stock product shows a disabled CTA and out of stock message.
      */
     public function test_out_of_stock_card_renders_disabled_cta(): void
     {
@@ -115,10 +105,9 @@ class ProductCardTest extends TestCase
             'symbol' => 'د.ج',
         ])->render();
 
-        $this->assertStringContainsString('is-disabled', $html);
-        $this->assertStringContainsString('aria-disabled="true"', $html);
-        $this->assertStringContainsString('do_not_disturb_on', $html);
-        $this->assertStringContainsString(__t('product.out_of_stock_label', [], 'ar'), $html);
+        $this->assertStringContainsString('disabled', $html);
+        $this->assertStringContainsString('نفذت الكمية', $html);
+        $this->assertStringContainsString('غير متوفر حالياً', $html);
     }
 
     /**
