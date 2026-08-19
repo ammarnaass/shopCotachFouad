@@ -151,12 +151,14 @@ class TranslationService
     public function cacheFlush(?string $locale = null): void
     {
         if ($locale) {
+            Cache::forget("trans_all_{$locale}");
             $groups = Translation::whereHas('language', fn($q) => $q->where('code', $locale))->pluck('group')->unique();
             foreach ($groups as $group) {
                 Cache::forget("translations_{$locale}_{$group}");
             }
         } else {
             foreach ($this->supportedLocales as $loc) {
+                Cache::forget("trans_all_{$loc}");
                 $groups = Translation::whereHas('language', fn($q) => $q->where('code', $loc))->pluck('group')->unique();
                 foreach ($groups as $group) {
                     Cache::forget("translations_{$loc}_{$group}");
@@ -171,9 +173,15 @@ class TranslationService
 
         if (!isset($allTranslations[$locale])) {
             $cached = Cache::remember("trans_all_{$locale}", 3600, function () use ($locale) {
-                return Translation::whereHas('language', fn($q) => $q->where('code', $locale))
-                    ->pluck('value', 'key')
-                    ->toArray();
+                $translations = Translation::whereHas('language', fn($q) => $q->where('code', $locale))->get();
+                $map = [];
+                foreach ($translations as $t) {
+                    if ($t->group) {
+                        $map[$t->group . '.' . $t->key] = $t->value;
+                    }
+                    $map[$t->key] = $t->value;
+                }
+                return $map;
             });
             $allTranslations[$locale] = $cached;
         }

@@ -30,9 +30,9 @@ class Category extends Model
         $locale = app()->getLocale();
 
         return match ($locale) {
-            'en' => $this->attributes['name_en'] ?? $this->attributes['name'],
-            'fr' => $this->attributes['name_fr'] ?? $this->attributes['name'],
-            default => $this->attributes['name'],
+            'en' => !empty($this->attributes['name_en']) ? $this->attributes['name_en'] : ($this->attributes['name'] ?? ''),
+            'fr' => !empty($this->attributes['name_fr']) ? $this->attributes['name_fr'] : ($this->attributes['name'] ?? ''),
+            default => $this->attributes['name'] ?? '',
         };
     }
 
@@ -41,9 +41,9 @@ class Category extends Model
         $locale = app()->getLocale();
 
         return match ($locale) {
-            'en' => $this->attributes['description_en'] ?? $this->attributes['description'],
-            'fr' => $this->attributes['description_fr'] ?? $this->attributes['description'],
-            default => $this->attributes['description'],
+            'en' => !empty($this->attributes['description_en']) ? $this->attributes['description_en'] : ($this->attributes['description'] ?? null),
+            'fr' => !empty($this->attributes['description_fr']) ? $this->attributes['description_fr'] : ($this->attributes['description'] ?? null),
+            default => $this->attributes['description'] ?? null,
         };
     }
 
@@ -52,9 +52,9 @@ class Category extends Model
         $locale = $locale ?: app()->getLocale();
 
         return match ($locale) {
-            'en' => $this->attributes['name_en'] ?? $this->attributes['name'],
-            'fr' => $this->attributes['name_fr'] ?? $this->attributes['name'],
-            default => $this->attributes['name'],
+            'en' => !empty($this->attributes['name_en']) ? $this->attributes['name_en'] : ($this->attributes['name'] ?? ''),
+            'fr' => !empty($this->attributes['name_fr']) ? $this->attributes['name_fr'] : ($this->attributes['name'] ?? ''),
+            default => $this->attributes['name'] ?? '',
         };
     }
 
