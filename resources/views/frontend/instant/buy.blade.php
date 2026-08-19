@@ -240,8 +240,18 @@
                         <h3 class="font-bold text-sm mb-2"><span class="material-symbols-outlined text-purple-600 me-1">local_shipping</span>{{ __t('instant.shipping_method') }}</h3>
                         <template x-if="shippingOptions.length === 0">
                             <div class="text-center py-4 text-sm text-gray-500">
-                                <span class="material-symbols-outlined">local_shipping</span>
-                                <p class="mt-1">{{ __t('instant.select_city_shipping') }}</p>
+                                <template x-if="!form.state_code && !form.city">
+                                    <div>
+                                        <span class="material-symbols-outlined">local_shipping</span>
+                                        <p class="mt-1">{{ __t('instant.select_city_shipping') }}</p>
+                                    </div>
+                                </template>
+                                <template x-if="form.state_code || form.city">
+                                    <div class="p-3.5 bg-red-50 text-red-700 border border-red-200 rounded-xl text-xs font-semibold flex items-center justify-center gap-2">
+                                        <span class="material-symbols-outlined text-red-500 text-base">warning</span>
+                                        <span>الشحن والتوصيل غير متوفر لهذه الولاية / المنطقة حالياً</span>
+                                    </div>
+                                </template>
                             </div>
                         </template>
                         <template x-if="shippingOptions.length > 0">

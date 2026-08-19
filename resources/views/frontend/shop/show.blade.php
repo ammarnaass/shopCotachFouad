@@ -528,8 +528,18 @@
                         </h2>
                         <template x-if="shippingOptions.length === 0">
                             <div class="text-center py-4 text-sm text-gray-500">
-                                <i class="fas fa-truck text-gray-300 text-2xl mb-2"></i>
-                                <p>{{ __t('instant.select_city_shipping') }}</p>
+                                <template x-if="!stateCode && !city">
+                                    <div>
+                                        <i class="fas fa-truck text-gray-300 text-2xl mb-2"></i>
+                                        <p>{{ __t('instant.select_city_shipping') }}</p>
+                                    </div>
+                                </template>
+                                <template x-if="stateCode || city">
+                                    <div class="p-3.5 bg-red-50 text-red-700 border border-red-200 rounded-xl text-xs font-semibold flex items-center justify-center gap-2">
+                                        <i class="fas fa-exclamation-triangle text-red-500 text-base"></i>
+                                        <span>الشحن والتوصيل غير متوفر لهذه الولاية / المنطقة حالياً</span>
+                                    </div>
+                                </template>
                             </div>
                         </template>
                         <template x-if="shippingOptions.length > 0">

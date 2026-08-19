@@ -125,6 +125,16 @@ class InstantBuyOrderController extends Controller
         $supported = $this->shippingService->getSupportedDeliveryTypes(
             $data['product_id'], $data['country_code'], $data['city']
         );
+
+        if (empty($supported)) {
+            return response()->json([
+                'success' => true,
+                'options' => [],
+                'companies' => [],
+                'supported_delivery_types' => [],
+            ]);
+        }
+
         $deliveryType = (!empty($data['delivery_type']) && in_array($data['delivery_type'], $supported))
             ? $data['delivery_type']
             : ($supported[0] ?? 'home');

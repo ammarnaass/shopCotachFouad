@@ -33,121 +33,95 @@ class DynamicShippingService
         $unavailable = [];
 
         foreach ($zones as $zone) {
-            $methods = $zone->activeMethods()->with('carrier')->get();
+            $carrierName = $zone->company?->name ?? 'توصيل محلي';
+            $carrierId = $zone->company_id;
+            $zoneDelivery = $zone->delivery_type ?? 'both';
 
-            if ($methods->isNotEmpty()) {
-                foreach ($methods as $method) {
-                    $cost = $this->calculateMethodCost($method, $zone, $deliveryType, $product);
+            // 1. Home Delivery Option (if zone supports home or both)
+            if ($zoneDelivery === 'home' || $zoneDelivery === 'both') {
+                $cost = (float) ($zone->home_cost ?? $zone->cost ?? 0);
+                $isFree = ($zone->free_threshold && $product->price >= $zone->free_threshold) || $cost === 0.0;
+                $available[] = [
+                    'id' => $zone->id . '_home',
+                    'name' => 'توصيل إلى المنزل' . ($zone->company ? ' (' . $carrierName . ')' : ''),
+                    'type' => 'standard',
+                    'carrier' => $carrierName,
+                    'carrier_id' => $carrierId,
+                    'zone_id' => $zone->id,
+                    'delivery_type' => 'home',
+                    'cost' => $cost,
+                    'is_free' => $isFree,
+                    'estimated_days' => $zone->estimated_days_standard ?? '2-4 أيام',
+                    'is_cod_available' => true,
+                    'pickup_location' => null,
+                ];
 
-                    // Apply product rules
-                    if (!$this->isMethodAllowedForProduct($method, $product)) {
-                        $unavailable[] = [
-                            'id' => $method->id,
-                            'name' => $method->name,
-                            'carrier' => $method->carrier?->name,
-                            'reason' => 'غير متاح لهذا المنتج',
-                        ];
-                        continue;
-                    }
-
-                    // Check city coverage
-                    if (!$this->isCityCovered($method, $city)) {
-                        continue;
-                    }
-
-                    // Get pickup location if office_pickup
-                    $pickupLocation = null;
-                    if ($method->type === 'office_pickup' && $method->carrier_id) {
-                        $pickupLocation = $this->getPickupLocation($method->carrier_id, $city, $countryCode);
-                    }
-
-                    $item = [
-                        'id' => $method->id,
-                        'name' => $method->name,
-                        'type' => $method->type,
-                        'carrier' => $method->carrier?->name ?? $zone->company?->name ?? 'الشحن',
-                        'carrier_id' => $method->carrier_id ?? $zone->company_id,
-                        'zone_id' => $zone->id,
-                        'delivery_type' => $deliveryType,
-                        'cost' => $cost,
-                        'is_free' => $cost === 0.0,
-                        'estimated_days' => $method->estimated_days ?? $zone->estimatedDays($deliveryType === 'express' ? 'express' : 'standard'),
-                        'is_cod_available' => true,
-                        'pickup_location' => $pickupLocation,
-                    ];
-
-                    $available[] = $item;
-                }
-            } else {
-                // Generate options directly from Zone costs
-                $carrierName = $zone->company?->name ?? 'توصيل محلي';
-                $carrierId = $zone->company_id;
-
-                if ($deliveryType === 'home' || $deliveryType === 'both') {
-                    $cost = (float) ($zone->home_cost ?? $zone->cost ?? 500);
+                // Express home delivery if configured
+                if (!empty($zone->home_express_cost) || !empty($zone->express_cost)) {
+                    $expressCost = (float) ($zone->home_express_cost ?? $zone->express_cost);
                     $available[] = [
-                        'id' => null,
-                        'name' => 'توصيل إلى المنزل (' . $carrierName . ')',
-                        'type' => 'standard',
+                        'id' => $zone->id . '_express',
+                        'name' => 'توصيل سريع للمنزل' . ($zone->company ? ' (' . $carrierName . ')' : ''),
+                        'type' => 'express',
                         'carrier' => $carrierName,
                         'carrier_id' => $carrierId,
                         'zone_id' => $zone->id,
                         'delivery_type' => 'home',
-                        'cost' => $cost,
-                        'is_free' => $cost === 0.0,
-                        'estimated_days' => $zone->estimated_days_standard ?? '2-4 أيام',
-                        'is_cod_available' => true,
-                        'pickup_location' => null,
-                    ];
-                }
-
-                if ($deliveryType === 'office' || ($deliveryType === 'both' && $zone->office_cost !== null)) {
-                    $cost = (float) ($zone->office_cost ?? $zone->cost ?? 400);
-                    $available[] = [
-                        'id' => null,
-                        'name' => 'استلام من المكتب (' . $carrierName . ')',
-                        'type' => 'office_pickup',
-                        'carrier' => $carrierName,
-                        'carrier_id' => $carrierId,
-                        'zone_id' => $zone->id,
-                        'delivery_type' => 'office',
-                        'cost' => $cost,
-                        'is_free' => $cost === 0.0,
-                        'estimated_days' => $zone->estimated_days_standard ?? '2-3 أيام',
+                        'cost' => $expressCost,
+                        'is_free' => false,
+                        'estimated_days' => $zone->estimated_days_express ?? '24-48 ساعة',
                         'is_cod_available' => true,
                         'pickup_location' => null,
                     ];
                 }
             }
+
+            // 2. Office Pickup Option (if zone supports office or both)
+            if ($zoneDelivery === 'office' || $zoneDelivery === 'both') {
+                $officeCost = (float) ($zone->office_cost ?? $zone->cost ?? 0);
+                $isFree = ($zone->free_threshold && $product->price >= $zone->free_threshold) || $officeCost === 0.0;
+                $available[] = [
+                    'id' => $zone->id . '_office',
+                    'name' => 'استلام من المكتب' . ($zone->company ? ' (' . $carrierName . ')' : ''),
+                    'type' => 'office_pickup',
+                    'carrier' => $carrierName,
+                    'carrier_id' => $carrierId,
+                    'zone_id' => $zone->id,
+                    'delivery_type' => 'office',
+                    'cost' => $officeCost,
+                    'is_free' => $isFree,
+                    'estimated_days' => $zone->estimated_days_standard ?? '2-3 أيام',
+                    'is_cod_available' => true,
+                    'pickup_location' => null,
+                ];
+            }
         }
 
-        // 3. Fallback when no specific micro-zone matched
+        // Only use default zone if admin explicitly set a zone as is_default = true
         if (empty($available)) {
             $defaultZone = ShippingZone::where('status', 'active')
-                ->where(function ($q) use ($countryCode) {
-                    $q->where('is_default', true)
-                      ->orWhereJsonContains('countries', $countryCode)
-                      ->orWhereJsonContains('countries', '*');
-                })
+                ->where('is_default', true)
                 ->first();
 
-            $cost = $defaultZone ? (float) ($defaultZone->home_cost ?? $defaultZone->cost ?? 500) : 500.0;
-            $companyName = $defaultZone?->company?->name ?? 'شحن قياسي';
+            if ($defaultZone && $defaultZone->supportsDelivery($deliveryType)) {
+                $carrierName = $defaultZone->company?->name ?? 'شحن قياسي';
+                $cost = (float) ($defaultZone->home_cost ?? $defaultZone->cost ?? 500);
 
-            $available[] = [
-                'id' => null,
-                'name' => 'توصيل قياسي (' . $companyName . ')',
-                'type' => 'standard',
-                'carrier' => $companyName,
-                'carrier_id' => $defaultZone?->company_id,
-                'zone_id' => $defaultZone?->id,
-                'delivery_type' => $deliveryType ?: 'home',
-                'cost' => $cost,
-                'is_free' => $cost === 0.0,
-                'estimated_days' => $defaultZone?->estimated_days_standard ?? '2-4 أيام',
-                'is_cod_available' => true,
-                'pickup_location' => null,
-            ];
+                $available[] = [
+                    'id' => null,
+                    'name' => 'توصيل قياسي (' . $carrierName . ')',
+                    'type' => 'standard',
+                    'carrier' => $carrierName,
+                    'carrier_id' => $defaultZone->company_id,
+                    'zone_id' => $defaultZone->id,
+                    'delivery_type' => $deliveryType ?: 'home',
+                    'cost' => $cost,
+                    'is_free' => $cost === 0.0,
+                    'estimated_days' => $defaultZone->estimated_days_standard ?? '2-4 أيام',
+                    'is_cod_available' => true,
+                    'pickup_location' => null,
+                ];
+            }
         }
 
         return [
@@ -288,7 +262,11 @@ class DynamicShippingService
             ->get()
             ->first(fn($z) => $z->isCityInZone($city, $countryCode));
 
-        $deliveryType = $zone?->delivery_type ?? 'home';
+        if (!$zone) {
+            return [];
+        }
+
+        $deliveryType = $zone->delivery_type ?? 'home';
 
         if ($deliveryType === 'office') {
             return ['office'];
