@@ -47,6 +47,59 @@
             'reviewCount' => (int) $product->reviews_count,
         ];
     }
+
+    $instantBuySetup = [
+        'id' => $product->id,
+        'name' => $product->name,
+        'basePrice' => $product->price,
+        'finalPrice' => $product->final_price,
+        'salePrice' => $product->sale_price,
+        'images' => $imageList,
+        'stock' => $product->stock,
+        'sku' => $product->sku,
+        'weight' => $product->weight ?? 0,
+        'countries' => $countries,
+        'defaultCountry' => $defaultCountry,
+        'defaultState' => $defaultState,
+        'defaultSymbol' => $countrySymbol,
+        'authUser' => $authUserData,
+        'conversionRate' => conversionRate(),
+        'ibEnabled' => (bool) $ibS('is_enabled'),
+        'selectedOptions' => $hasOptions ? $product->options->mapWithKeys(fn($o) => [$o->id => null])->toArray() : [],
+        'optionsAdjustments' => $hasOptions ? $product->options->reduce(function ($carry, $o) { foreach ($o->values as $v) { $carry[(int) $v->id] = (float) $v->price_adjustment; } return $carry; }, []) : [],
+        'customFieldPrice' => (float) ($product->customFields->whereIn('type', ['text', 'textarea'])->first()?->price_effect ?? 0),
+        'categoryName' => $product->category?->name,
+        'categorySlug' => $product->category?->slug,
+        'storeCountry' => config('ecommerce.store.default_country', 'DZ'),
+        'validationRules' => collect([
+            ['field' => 'countryCode', 'enabled' => $ibS('field_country_enabled'), 'required' => $ibS('field_country_required')],
+            ['field' => 'city', 'enabled' => $ibS('field_city_enabled'), 'required' => $ibS('field_city_required')],
+            ['field' => 'form.phone', 'enabled' => $ibS('field_phone_enabled'), 'required' => $ibS('field_phone_required')],
+            ['field' => 'form.address', 'enabled' => $ibS('field_address_enabled'), 'required' => $ibS('field_address_required')],
+            ['field' => 'form.first_name', 'enabled' => $ibS('field_first_name_enabled'), 'required' => $ibS('field_first_name_required')],
+            ['field' => 'form.last_name', 'enabled' => $ibS('field_last_name_enabled'), 'required' => $ibS('field_last_name_required')],
+            ['field' => 'form.email', 'enabled' => $ibS('field_email_enabled'), 'required' => $ibS('field_email_required')],
+            ['field' => 'stateCode', 'enabled' => $ibS('field_state_enabled'), 'required' => $ibS('field_state_required')],
+            ['field' => 'form.district', 'enabled' => $ibS('field_district_enabled'), 'required' => $ibS('field_district_required')],
+            ['field' => 'form.zip', 'enabled' => $ibS('field_zip_enabled'), 'required' => $ibS('field_zip_required')],
+        ])->where('enabled', true)->where('required', true)->values()->map(fn($r) => ['field' => $r['field']])->values()->toArray(),
+        'routes' => [
+            'calculateNew' => route('instant-buy.calculate'),
+            'calculate' => route('instant.calculate'),
+            'shippingOptionsNew' => route('instant-buy.shipping-options'),
+            'shippingOptions' => route('instant.shipping-options'),
+            'couponNew' => route('instant-buy.coupon'),
+            'coupon' => route('instant.coupon'),
+        ],
+        't' => [
+            'fillRequired' => __t('shop.show.fill_required'),
+            'couponInvalid' => __t('shop.show.coupon_invalid'),
+            'couponError' => __t('shop.show.coupon_error'),
+            'orderError' => __t('shop.show.order_error'),
+            'generalError' => __t('shop.show.general_error'),
+            'submitError' => __t('shop.show.submit_error'),
+        ],
+    ];
 @endphp
 
 @push('head')
@@ -87,59 +140,8 @@
 @section('content')
 <div class="bg-gray-50 product-detail text-on-surface transition-colors"
      x-data="instantBuyForm"
-      x-init="setup(@json([
-          'id' => $product->id,
-          'name' => $product->name,
-          'basePrice' => $product->price,
-          'finalPrice' => $product->final_price,
-          'salePrice' => $product->sale_price,
-          'images' => $imageList,
-          'stock' => $product->stock,
-          'sku' => $product->sku,
-          'weight' => $product->weight ?? 0,
-          'countries' => $countries,
-          'defaultCountry' => $defaultCountry,
-          'defaultState' => $defaultState,
-          'defaultSymbol' => $countrySymbol,
-          'authUser' => $authUserData,
-          'conversionRate' => conversionRate(),
-          'ibEnabled' => (bool) $ibS('is_enabled'),
-          'selectedOptions' => $hasOptions ? $product->options->mapWithKeys(fn($o) => [$o->id => null])->toArray() : [],
-          'optionsAdjustments' => $hasOptions ? $product->options->reduce(function ($carry, $o) { foreach ($o->values as $v) { $carry[(int) $v->id] = (float) $v->price_adjustment; } return $carry; }, []) : [],
-          'customFieldPrice' => (float) ($product->customFields->whereIn('type', ['text', 'textarea'])->first()?->price_effect ?? 0),
-          'categoryName' => $product->category?->name,
-          'categorySlug' => $product->category?->slug,
-          'storeCountry' => config('ecommerce.store.default_country', 'DZ'),
-          'validationRules' => collect([
-              ['field' => 'countryCode', 'enabled' => $ibS('field_country_enabled'), 'required' => $ibS('field_country_required')],
-              ['field' => 'city', 'enabled' => $ibS('field_city_enabled'), 'required' => $ibS('field_city_required')],
-              ['field' => 'form.phone', 'enabled' => $ibS('field_phone_enabled'), 'required' => $ibS('field_phone_required')],
-              ['field' => 'form.address', 'enabled' => $ibS('field_address_enabled'), 'required' => $ibS('field_address_required')],
-              ['field' => 'form.first_name', 'enabled' => $ibS('field_first_name_enabled'), 'required' => $ibS('field_first_name_required')],
-              ['field' => 'form.last_name', 'enabled' => $ibS('field_last_name_enabled'), 'required' => $ibS('field_last_name_required')],
-              ['field' => 'form.email', 'enabled' => $ibS('field_email_enabled'), 'required' => $ibS('field_email_required')],
-              ['field' => 'stateCode', 'enabled' => $ibS('field_state_enabled'), 'required' => $ibS('field_state_required')],
-              ['field' => 'form.district', 'enabled' => $ibS('field_district_enabled'), 'required' => $ibS('field_district_required')],
-              ['field' => 'form.zip', 'enabled' => $ibS('field_zip_enabled'), 'required' => $ibS('field_zip_required')],
-          ])->where('enabled', true)->where('required', true)->values()->map(fn($r) => ['field' => $r['field']])->values()->toArray(),
-          'routes' => [
-              'calculateNew' => route('instant-buy.calculate'),
-              'calculate' => route('instant.calculate'),
-              'shippingOptionsNew' => route('instant-buy.shipping-options'),
-              'shippingOptions' => route('instant.shipping-options'),
-              'couponNew' => route('instant-buy.coupon'),
-              'coupon' => route('instant.coupon'),
-          ],
-          't' => [
-              'fillRequired' => __t('shop.show.fill_required'),
-              'couponInvalid' => __t('shop.show.coupon_invalid'),
-              'couponError' => __t('shop.show.coupon_error'),
-              'orderError' => __t('shop.show.order_error'),
-              'generalError' => __t('shop.show.general_error'),
-              'submitError' => __t('shop.show.submit_error'),
-          ],
-      ]))"
-      :style='ibEnabled && {{ $ibS('is_enabled') ? 'true' : 'false' }} ? { backgroundColor: "{{ $ibS('form_bg_color') }}", border: "{{ $ibS('form_border_width') }}px solid {{ $ibS('form_border_color') }}", borderRadius: "{{ $ibS('form_border_radius') }}px", boxShadow: "{{ $ibS('form_shadow') }}" } : {}'>
+     x-init="setup({{ json_encode($instantBuySetup) }})"
+     :style='ibEnabled && {{ $ibS('is_enabled') ? 'true' : 'false' }} ? { backgroundColor: "{{ $ibS('form_bg_color') }}", border: "{{ $ibS('form_border_width') }}px solid {{ $ibS('form_border_color') }}", borderRadius: "{{ $ibS('form_border_radius') }}px", boxShadow: "{{ $ibS('form_shadow') }}" } : {}'>
 
 
     {{-- ============ BREADCRUMB ============ --}}
