@@ -1042,19 +1042,24 @@ function instantBuyForm() {
         },
 
         async fetchShippingOptions() {
-            if (!this.product.id || !this.countryCode || !this.city) return;
+            const cityValue = this.city || (this.stateCode && this.currentStates[this.stateCode]) || this.stateCode;
+            if (!this.product.id || !this.countryCode || !cityValue) return;
+            this.city = cityValue;
+
             try {
+                const csrfToken = document.querySelector('meta[name=csrf-token]') ? document.querySelector('meta[name=csrf-token]').content : '{{ csrf_token() }}';
                 const payload = {
                     product_id: this.product.id,
                     country_code: this.countryCode,
                     city: this.city,
-                    delivery_type: this.deliveryType,
+                    delivery_type: this.deliveryType || 'home',
                 };
-                const res = await fetch(this.ibEnabled ? '{{ route('instant-buy.shipping-options') }}' : '{{ route('instant.shipping-options') }}', {
+                const endpoint = this.ibEnabled ? '{{ route('instant-buy.shipping-options', ['locale' => current_locale()]) }}' : '{{ route('instant.shipping-options', ['locale' => current_locale()]) }}';
+                const res = await fetch(endpoint, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
-                        'X-CSRF-TOKEN': document.querySelector('meta[name=csrf-token]').content,
+                        'X-CSRF-TOKEN': csrfToken,
                         'Accept': 'application/json',
                         'X-Requested-With': 'XMLHttpRequest',
                     },
@@ -1066,25 +1071,23 @@ function instantBuyForm() {
                     this.fixedCompany = data.fixed_company || null;
                     this.supportedDeliveryTypes = data.supported_delivery_types || ['home'];
                     this.zoneDeliveryType = data.zone_delivery_type || 'home';
-                    this.deliveryType = this.supportedDeliveryTypes[0];
-                    // Auto-select first option if current selection is invalid
+                    if (!this.deliveryType || !this.supportedDeliveryTypes.includes(this.deliveryType)) {
+                        this.deliveryType = this.supportedDeliveryTypes[0] || 'home';
+                    }
                     if (this.shippingOptions.length > 0) {
-                        const currentValid = this.shippingOptions.find(o =>
-                            o.type === this.selectedShippingOption?.type &&
-                            o.company_id === this.selectedShippingOption?.company_id &&
-                            o.delivery_type === this.deliveryType
-                        );
-                        if (!currentValid) {
-                            this.selectShippingOption(this.shippingOptions[0]);
-                        }
+                        this.selectShippingOption(this.shippingOptions[0]);
                     }
                 }
-            } catch (e) { /* silent */ }
+            } catch (e) { 
+                console.warn('Shipping options error:', e);
+            }
         },
 
         onStateChange() {
             if (this.stateCode && this.currentStates[this.stateCode]) {
                 this.city = this.currentStates[this.stateCode];
+            }
+            if (this.city || this.stateCode) {
                 this.fetchShippingOptions();
                 this.recalculate();
             }
@@ -1184,11 +1187,13 @@ function instantBuyForm() {
                     if (hasOptions) payload.options = opts;
                 }
 
-                const res = await fetch(this.ibEnabled ? '{{ route('instant-buy.calculate') }}' : '{{ route('instant.calculate') }}', {
+                const csrfToken = document.querySelector('meta[name=csrf-token]') ? document.querySelector('meta[name=csrf-token]').content : '{{ csrf_token() }}';
+                const endpoint = this.ibEnabled ? '{{ route('instant-buy.calculate', ['locale' => current_locale()]) }}' : '{{ route('instant.calculate', ['locale' => current_locale()]) }}';
+                const res = await fetch(endpoint, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
-                        'X-CSRF-TOKEN': document.querySelector('meta[name=csrf-token]').content,
+                        'X-CSRF-TOKEN': csrfToken,
                         'Accept': 'application/json',
                         'X-Requested-With': 'XMLHttpRequest',
                     },
@@ -1228,11 +1233,13 @@ function instantBuyForm() {
             this.couponMessage = '';
 
             try {
-                const res = await fetch(this.ibEnabled ? '{{ route('instant-buy.coupon') }}' : '{{ route('instant.coupon') }}', {
+                const csrfToken = document.querySelector('meta[name=csrf-token]') ? document.querySelector('meta[name=csrf-token]').content : '{{ csrf_token() }}';
+                const endpoint = this.ibEnabled ? '{{ route('instant-buy.coupon', ['locale' => current_locale()]) }}' : '{{ route('instant.coupon', ['locale' => current_locale()]) }}';
+                const res = await fetch(endpoint, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
-                        'X-CSRF-TOKEN': document.querySelector('meta[name=csrf-token]').content,
+                        'X-CSRF-TOKEN': csrfToken,
                         'Accept': 'application/json',
                         'X-Requested-With': 'XMLHttpRequest',
                     },
@@ -1310,12 +1317,13 @@ function instantBuyForm() {
                     if (this.selectedShippingOption) fd.set('shipping_cost', this.selectedShippingOption.cost);
                 }
 
+                const csrfToken = document.querySelector('meta[name=csrf-token]') ? document.querySelector('meta[name=csrf-token]').content : '{{ csrf_token() }}';
                 const res = await fetch(event.target.action, {
                     method: 'POST',
                     body: fd,
                     headers: {
                         'Accept': 'application/json',
-                        'X-CSRF-TOKEN': document.querySelector('meta[name=csrf-token]').content,
+                        'X-CSRF-TOKEN': csrfToken,
                         'X-Requested-With': 'XMLHttpRequest',
                     },
                 });

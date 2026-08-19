@@ -544,14 +544,16 @@ function instantBuy() {
         async fetchShippingOptions() {
             if (!this.product || !this.form.country_code || !this.form.city) return;
             try {
+                const csrfToken = document.querySelector('meta[name="csrf-token"]') ? document.querySelector('meta[name="csrf-token"]').content : '{{ csrf_token() }}';
                 const fd = new FormData();
                 fd.append('product_id', this.product.id);
                 fd.append('country_code', this.form.country_code);
                 fd.append('city', this.form.city);
                 fd.append('delivery_type', this.form.delivery_type || '');
-                fd.append('_token', document.querySelector('meta[name="csrf-token"]').content);
+                fd.append('_token', csrfToken);
 
-                const res = await fetch('{{ route('instant.shipping-options') }}', {
+                const endpoint = '{{ route('instant.shipping-options', ['locale' => current_locale()]) }}';
+                const res = await fetch(endpoint, {
                     method: 'POST', body: fd, headers: { 'Accept': 'application/json' }
                 });
                 if (res.ok) {
@@ -589,6 +591,7 @@ function instantBuy() {
 
         async recalculate() {
             if (!this.product) return;
+            const csrfToken = document.querySelector('meta[name="csrf-token"]') ? document.querySelector('meta[name="csrf-token"]').content : '{{ csrf_token() }}';
             const fd = new FormData();
             fd.append('product_id', this.product.id);
             fd.append('quantity', this.quantity);
@@ -601,10 +604,11 @@ function instantBuy() {
             for (const optId in this.selectedOptions) {
                 fd.append(`options[${optId}]`, this.selectedOptions[optId]);
             }
-            fd.append('_token', document.querySelector('meta[name="csrf-token"]').content);
+            fd.append('_token', csrfToken);
 
             try {
-                const res = await fetch('{{ route('instant.calculate') }}', { method: 'POST', body: fd, headers: { 'Accept': 'application/json' } });
+                const endpoint = '{{ route('instant.calculate', ['locale' => current_locale()]) }}';
+                const res = await fetch(endpoint, { method: 'POST', body: fd, headers: { 'Accept': 'application/json' } });
                 if (res.ok) {
                     const data = await res.json();
                     this._shippingCost = parseFloat(data.shipping_cost || 0);
@@ -617,14 +621,16 @@ function instantBuy() {
             if (!this.couponCode) return;
             this.applyingCoupon = true; this.couponError = ''; this.couponMessage = '';
             try {
+                const csrfToken = document.querySelector('meta[name="csrf-token"]') ? document.querySelector('meta[name="csrf-token"]').content : '{{ csrf_token() }}';
                 const fd = new FormData();
                 fd.append('code', this.couponCode);
                 fd.append('product_id', this.product.id);
                 fd.append('subtotal', this.currentSubtotal);
                 fd.append('country_code', this.form.country_code);
                 fd.append('city', this.form.city || '');
-                fd.append('_token', document.querySelector('meta[name="csrf-token"]').content);
-                const res = await fetch('{{ route('instant.coupon') }}', { method: 'POST', body: fd, headers: { 'Accept': 'application/json' } });
+                fd.append('_token', csrfToken);
+                const endpoint = '{{ route('instant.coupon', ['locale' => current_locale()]) }}';
+                const res = await fetch(endpoint, { method: 'POST', body: fd, headers: { 'Accept': 'application/json' } });
                 const data = await res.json();
                 if (data.valid) {
                     this.discount = parseFloat(data.discount || 0);
@@ -646,8 +652,10 @@ function instantBuy() {
             this.submitting = true;
             document.documentElement.classList.add('is-loading');
             try {
+                const csrfToken = document.querySelector('meta[name="csrf-token"]') ? document.querySelector('meta[name="csrf-token"]').content : '{{ csrf_token() }}';
                 const fd = new FormData(ev.target);
-                const res = await fetch('{{ route('instant.submit') }}', { method: 'POST', body: fd, headers: { 'Accept': 'application/json', 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content } });
+                const endpoint = '{{ route('instant.submit', ['locale' => current_locale()]) }}';
+                const res = await fetch(endpoint, { method: 'POST', body: fd, headers: { 'Accept': 'application/json', 'X-CSRF-TOKEN': csrfToken } });
                 const data = await res.json();
                 if (data.success) {
                     window.location.href = data.redirect || ('/order/' + data.order_number + '/thanks');

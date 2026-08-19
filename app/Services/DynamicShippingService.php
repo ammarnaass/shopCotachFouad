@@ -159,10 +159,10 @@ class DynamicShippingService
     /**
      * Calculate cost for a specific method in a zone.
      */
-    public function calculateMethodCost(ShippingMethod $method, ShippingZone $zone, string $deliveryType, Product $product): float
+    public function calculateMethodCost($method, $zone, string $deliveryType, Product $product): float
     {
         // If method has its own flat rate, use it
-        if ($method->flat_rate_amount !== null) {
+        if (isset($method->flat_rate_amount) && $method->flat_rate_amount !== null) {
             $cost = (float) $method->flat_rate_amount;
         } else {
             // Fall back to zone's delivery-type-specific cost
@@ -175,9 +175,9 @@ class DynamicShippingService
 
         // Add weight-based cost
         $weight = (float) ($product->weight ?? 0);
-        if ($method->cost_per_kg && $weight > 0) {
+        if (!empty($method->cost_per_kg) && $weight > 0) {
             $cost += $weight * (float) $method->cost_per_kg;
-        } elseif ($zone->cost_per_kg && $weight > 0) {
+        } elseif (!empty($zone->cost_per_kg) && $weight > 0) {
             $cost += $weight * (float) $zone->cost_per_kg;
         }
 
@@ -187,7 +187,7 @@ class DynamicShippingService
     /**
      * Check if a method is allowed for a product based on product rules.
      */
-    private function isMethodAllowedForProduct(ShippingMethod $method, Product $product): bool
+    private function isMethodAllowedForProduct($method, Product $product): bool
     {
         $rule = $product->shippingRule;
         if (!$rule) return true;
@@ -229,7 +229,7 @@ class DynamicShippingService
     /**
      * Check if a method covers a specific city.
      */
-    private function isCityCovered(ShippingMethod $method, string $city): bool
+    private function isCityCovered($method, string $city): bool
     {
         $covered = $method->covered_cities ?? [];
         $excluded = $method->excluded_cities ?? [];
