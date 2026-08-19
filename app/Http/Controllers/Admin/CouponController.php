@@ -3,7 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
-use App\Models\Coupon;
+use App\Models\Catalog\Coupon;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -13,6 +13,7 @@ class CouponController extends Controller
     public function index(): View
     {
         $coupons = Coupon::latest()->paginate(20);
+
         return view('admin.coupons.index', compact('coupons'));
     }
 
@@ -35,6 +36,7 @@ class CouponController extends Controller
         ]);
 
         Coupon::create($data);
+
         return redirect()->route('admin.coupons.index')->with('success', 'تم إضافة الكوبون');
     }
 
@@ -46,7 +48,7 @@ class CouponController extends Controller
     public function update(Request $request, Coupon $coupon): RedirectResponse
     {
         $data = $request->validate([
-            'code' => 'required|string|unique:coupons,code,' . $coupon->id,
+            'code' => 'required|string|unique:coupons,code,'.$coupon->id,
             'type' => 'required|in:fixed,percent',
             'value' => 'required|numeric|min:0',
             'min_order' => 'nullable|numeric|min:0',
@@ -57,12 +59,14 @@ class CouponController extends Controller
         ]);
 
         $coupon->update($data);
+
         return redirect()->route('admin.coupons.index')->with('success', 'تم التحديث');
     }
 
     public function destroy(Coupon $coupon): RedirectResponse
     {
         $coupon->delete();
+
         return redirect()->route('admin.coupons.index')->with('success', 'تم الحذف');
     }
 }

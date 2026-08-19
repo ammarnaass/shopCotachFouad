@@ -11,6 +11,41 @@
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:wght,FILL@100..700,0..1&display=swap" rel="stylesheet">
     @vite(['resources/css/app.css', 'resources/js/app.js'])
+
+    {{-- ── Dynamic admin colors from لوحة الإدارة ← التخصيص ← المظهر ── --}}
+    {{-- Same source of truth as the frontend — primary_color & accent_color --}}
+    <style>
+        :root {
+            --color-primary:              {{ $siteSettings['primary_color'] ?? '#2563eb' }};
+            --color-accent:               {{ $siteSettings['accent_color']  ?? '#f59e0b' }};
+            --color-primary-container:    color-mix(in srgb, var(--color-primary) 25%, white);
+            --color-on-primary:           #ffffff;
+            --color-on-primary-container: color-mix(in srgb, var(--color-primary) 85%, black);
+            --color-primary-fixed:        color-mix(in srgb, var(--color-primary) 35%, white);
+            --color-primary-fixed-dim:    color-mix(in srgb, var(--color-primary) 55%, white);
+            --color-inverse-primary:      color-mix(in srgb, var(--color-primary) 70%, white);
+            --color-surface-tint:         var(--color-primary);
+            --color-tertiary:             {{ $siteSettings['accent_color'] ?? '#f59e0b' }};
+            --color-tertiary-container:   color-mix(in srgb, var(--color-accent) 25%, white);
+            --color-on-tertiary:          #ffffff;
+        }
+
+        /* Tailwind utility overrides for admin panel */
+        .bg-primary          { background-color: var(--color-primary) !important; }
+        .text-primary        { color: var(--color-primary) !important; }
+        .border-primary      { border-color: var(--color-primary) !important; }
+        .ring-primary, .focus\:ring-primary:focus { --tw-ring-color: var(--color-primary) !important; }
+        .focus\:border-primary:focus { border-color: var(--color-primary) !important; }
+        .bg-primary-container { background-color: var(--color-primary-container) !important; }
+        .bg-primary\/5        { background-color: color-mix(in srgb, var(--color-primary)  5%, transparent) !important; }
+        .bg-primary\/10       { background-color: color-mix(in srgb, var(--color-primary) 10%, white) !important; }
+        .bg-primary\/20       { background-color: color-mix(in srgb, var(--color-primary) 20%, white) !important; }
+        .bg-primary-fixed\/30 { background-color: color-mix(in srgb, var(--color-primary) 30%, white) !important; }
+        .hover\:text-primary:hover   { color: var(--color-primary) !important; }
+        .hover\:bg-primary:hover     { background-color: var(--color-primary) !important; }
+        .hover\:border-primary:hover { border-color: var(--color-primary) !important; }
+    </style>
+
     @stack('styles')
 </head>
 <body class="bg-surface text-on-surface min-h-screen">
@@ -129,6 +164,23 @@
                 @if(($stats['pending_instant_orders'] ?? 0) > 0)
                     <span class="mr-auto bg-error text-on-error text-xs px-1.5 py-0.5 rounded-full">{{ $stats['pending_instant_orders'] }}</span>
                 @endif
+            </a>
+            <div class="pt-4 pb-1 px-4 text-xs text-surface-variant/50 font-semibold">المستندات والطباعة</div>
+            <a href="{{ route('admin.footer.index') }}" class="flex items-center gap-4 px-4 py-3 rounded-lg transition-all duration-150 active:scale-95 {{ request()->routeIs('admin.footer*') ? 'active' : 'sidebar-link' }}">
+                <span class="material-symbols-outlined">bottom_sheets</span>
+                <span class="font-medium text-sm">إدارة الفوتر</span>
+            </a>
+            <a href="{{ route('admin.invoices.templates.index') }}" class="flex items-center gap-4 px-4 py-3 rounded-lg transition-all duration-150 active:scale-95 {{ request()->routeIs('admin.invoices*') ? 'active' : 'sidebar-link' }}">
+                <span class="material-symbols-outlined">receipt_long</span>
+                <span class="font-medium text-sm">قوالب الفواتير</span>
+            </a>
+            <a href="{{ route('admin.order-labels.templates.index') }}" class="flex items-center gap-4 px-4 py-3 rounded-lg transition-all duration-150 active:scale-95 {{ request()->routeIs('admin.order-labels*') ? 'active' : 'sidebar-link' }}">
+                <span class="material-symbols-outlined">label</span>
+                <span class="font-medium text-sm">ملصقات الطلبات</span>
+            </a>
+            <a href="{{ route('admin.settings.printing') }}" class="flex items-center gap-4 px-4 py-3 rounded-lg transition-all duration-150 active:scale-95 {{ request()->routeIs('admin.settings.printing*') ? 'active' : 'sidebar-link' }}">
+                <span class="material-symbols-outlined">print</span>
+                <span class="font-medium text-sm">إعدادات الطباعة</span>
             </a>
         </nav>
 

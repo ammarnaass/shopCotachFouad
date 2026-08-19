@@ -6,7 +6,7 @@
 @php
     use Illuminate\Support\Facades\Config;
     $countries = Config::get('ecommerce.countries', []);
-    $allCompanies = \App\Models\ShippingCompany::where('status', 'active')->orderBy('name')->get();
+    $allCompanies = \App\Models\Shipping\ShippingCompany::where('status', 'active')->orderBy('name')->get();
 @endphp
 
 <!-- Breadcrumb & Header -->
@@ -107,16 +107,16 @@
                         <span class="text-[11px] text-primary cursor-pointer hover:underline">{{ __t('admin.shipping.select_all') }}</span>
                     </div>
                     <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
-                        <label class="flex items-center gap-3 p-3 rounded-xl border border-outline-variant cursor-pointer transition-all hover:bg-surface-container-high {{ in_array('*', old('countries', $zone->countries ?? [])) ? 'border-primary bg-primary/5' : '' }}">
-                            <input type="checkbox" name="countries[]" value="*" {{ in_array('*', old('countries', $zone->countries ?? [])) ? 'checked' : '' }} class="w-5 h-5 rounded text-primary border-outline-variant focus:ring-primary transition-all">
+                        <label class="flex items-center gap-3 p-3 rounded-xl border border-outline-variant cursor-pointer transition-all hover:bg-surface-container-high {{ in_array('*', old('countries', $zone->countries ?? ['DZ'])) ? 'border-primary bg-primary/5' : '' }}">
+                            <input type="checkbox" name="countries[]" value="*" {{ in_array('*', old('countries', $zone->countries ?? ['DZ'])) ? 'checked' : '' }} class="w-5 h-5 rounded text-primary border-outline-variant focus:ring-primary transition-all">
                                 <span class="flex items-center gap-2 font-label-md text-label-md">
                                 <span class="material-symbols-outlined text-primary text-lg">language</span>
                                 {{ __t('admin.shipping.all_countries') }}
                             </span>
                         </label>
                         @foreach($countries as $code => $info)
-                            <label class="flex items-center gap-3 p-3 rounded-xl border border-outline-variant cursor-pointer transition-all hover:bg-surface-container-high country-card {{ in_array($code, old('countries', $zone->countries ?? [])) ? 'border-primary bg-primary/5' : '' }}">
-                                <input type="checkbox" name="countries[]" value="{{ $code }}" {{ in_array($code, old('countries', $zone->countries ?? [])) ? 'checked' : '' }} class="w-5 h-5 rounded text-primary border-outline-variant focus:ring-primary transition-all country-toggle" data-country="{{ $code }}">
+                            <label class="flex items-center gap-3 p-3 rounded-xl border border-outline-variant cursor-pointer transition-all hover:bg-surface-container-high country-card {{ in_array($code, old('countries', $zone->countries ?? ['DZ'])) ? 'border-primary bg-primary/5' : '' }}">
+                                <input type="checkbox" name="countries[]" value="{{ $code }}" {{ in_array($code, old('countries', $zone->countries ?? ['DZ'])) ? 'checked' : '' }} class="w-5 h-5 rounded text-primary border-outline-variant focus:ring-primary transition-all country-toggle" data-country="{{ $code }}">
                                 <span class="flex items-center gap-2 font-label-md text-label-md">
                                     <span class="text-xl">{{ $info['flag'] ?? '' }}</span>
                                     {{ $info['name'] }}
@@ -128,7 +128,8 @@
 
                 <!-- Cities / States -->
                 <div id="states-container" class="space-y-3">
-                    @php $selectedCountries = old('countries', $zone->countries ?? []); @endphp
+                    <label class="font-label-md text-label-md text-on-surface-variant block">الولاية / المحافظة <span class="text-error">*</span></label>
+                    @php $selectedCountries = old('countries', $zone->countries ?? ['DZ']); @endphp
                     @foreach($countries as $code => $info)
                         @if(in_array($code, $selectedCountries) || (in_array('*', $selectedCountries)))
                             <div class="country-states border border-outline-variant rounded-xl p-4 bg-surface-container-low/30 {{ in_array('*', $selectedCountries) && !in_array($code, $selectedCountries) ? 'hidden' : '' }}" data-country="{{ $code }}">

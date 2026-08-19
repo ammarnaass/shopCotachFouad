@@ -3,7 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
-use App\Models\PaymentMethod;
+use App\Models\Order\PaymentMethod;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -13,6 +13,7 @@ class PaymentMethodController extends Controller
     public function index(): View
     {
         $methods = PaymentMethod::ordered()->get();
+
         return view('admin.payment-methods.index', compact('methods'));
     }
 
@@ -58,7 +59,7 @@ class PaymentMethodController extends Controller
     {
         $data = $request->validate([
             'name' => 'required|string|max:255',
-            'code' => 'required|string|max:50|unique:payment_methods,code,' . $paymentMethod->id,
+            'code' => 'required|string|max:50|unique:payment_methods,code,'.$paymentMethod->id,
             'icon' => 'required|string|max:60',
             'color' => 'required|string|max:30',
             'description' => 'nullable|string|max:500',
@@ -85,12 +86,14 @@ class PaymentMethodController extends Controller
     public function destroy(PaymentMethod $paymentMethod): RedirectResponse
     {
         $paymentMethod->delete();
+
         return redirect()->route('admin.payment-methods.index')->with('success', __t('admin.payment_methods.deleted'));
     }
 
     public function toggleActive(PaymentMethod $paymentMethod): RedirectResponse
     {
-        $paymentMethod->update(['is_active' => !$paymentMethod->is_active]);
+        $paymentMethod->update(['is_active' => ! $paymentMethod->is_active]);
+
         return back()->with('success', __t('admin.payment_methods.updated'));
     }
 }

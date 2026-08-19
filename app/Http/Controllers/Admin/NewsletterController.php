@@ -3,7 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
-use App\Models\NewsletterSubscriber;
+use App\Models\Content\NewsletterSubscriber;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -19,7 +19,7 @@ class NewsletterController extends Controller
         }
 
         if ($request->search) {
-            $query->where('email', 'like', '%' . $request->search . '%');
+            $query->where('email', 'like', '%'.$request->search.'%');
         }
 
         $subscribers = $query->latest()->paginate(25);
@@ -33,15 +33,17 @@ class NewsletterController extends Controller
     public function destroy(NewsletterSubscriber $subscriber): RedirectResponse
     {
         $subscriber->delete();
+
         return redirect()->route('admin.newsletter.index')->with('success', __t('admin.newsletter.deleted'));
     }
 
     public function destroySelected(Request $request): RedirectResponse
     {
         $ids = $request->input('selected', []);
-        if (!empty($ids)) {
+        if (! empty($ids)) {
             NewsletterSubscriber::destroy($ids);
         }
+
         return redirect()->route('admin.newsletter.index')->with('success', __t('admin.newsletter.deleted_selected'));
     }
 
@@ -50,8 +52,9 @@ class NewsletterController extends Controller
         $subscribers = NewsletterSubscriber::where('status', 'active')->get(['email', 'subscribed_at']);
         $csv = "Email,Subscribed At\n";
         foreach ($subscribers as $s) {
-            $csv .= $s->email . ',' . $s->subscribed_at . "\n";
+            $csv .= $s->email.','.$s->subscribed_at."\n";
         }
+
         return response($csv, 200, [
             'Content-Type' => 'text/csv; charset=utf-8',
             'Content-Disposition' => 'attachment; filename="newsletter-subscribers.csv"',

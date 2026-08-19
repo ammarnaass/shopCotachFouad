@@ -3,8 +3,9 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
-use App\Models\ShippingOfficePickup;
-use App\Models\ShippingZone;
+use App\Models\Catalog\Coupon;
+use App\Models\Shipping\ShippingOfficePickup;
+use App\Models\Shipping\ShippingZone;
 use App\Services\DynamicShippingService;
 use App\Services\ShippingCalculator;
 use Illuminate\Http\JsonResponse;
@@ -18,13 +19,13 @@ class ShippingApiController extends Controller
             ->with(['activeMethods.carrier'])
             ->orderBy('priority')
             ->get()
-            ->map(fn($z) => [
+            ->map(fn ($z) => [
                 'id' => $z->id,
                 'name' => $z->name,
                 'description' => $z->description,
                 'countries' => $z->countries,
                 'cities' => $z->cities ?? $z->regions,
-                'methods' => $z->activeMethods->map(fn($m) => [
+                'methods' => $z->activeMethods->map(fn ($m) => [
                     'id' => $m->id,
                     'name' => $m->name,
                     'type' => $m->type,
@@ -56,7 +57,7 @@ class ShippingApiController extends Controller
         if ($request->country_id || $request->city_id || $request->state_id) {
             $coupon = null;
             if ($request->coupon_code) {
-                $coupon = \App\Models\Coupon::where('code', $request->coupon_code)->where('status', 'active')->first();
+                $coupon = Coupon::where('code', $request->coupon_code)->where('status', 'active')->first();
             }
 
             $result = $calculator->calculate(
@@ -73,7 +74,7 @@ class ShippingApiController extends Controller
         // Legacy: calculate by city name
         $zone = ShippingZone::where('status', 'active')
             ->get()
-            ->first(fn($z) => $z->isCityInZone($request->city ?? '', $request->country_code ?? ''));
+            ->first(fn ($z) => $z->isCityInZone($request->city ?? '', $request->country_code ?? ''));
 
         $cost = 0;
         $zoneName = null;
@@ -158,7 +159,7 @@ class ShippingApiController extends Controller
         $offices = ShippingOfficePickup::where('carrier_id', $carrier)
             ->where('is_active', true)
             ->get()
-            ->map(fn($o) => [
+            ->map(fn ($o) => [
                 'id' => $o->id,
                 'name' => $o->name,
                 'address' => $o->address,
@@ -178,7 +179,7 @@ class ShippingApiController extends Controller
     {
         $tracking = $calculator->trackShipment($number);
 
-        if (!$tracking) {
+        if (! $tracking) {
             return response()->json([
                 'success' => false,
                 'message' => 'رقم التتبع غير موجود',

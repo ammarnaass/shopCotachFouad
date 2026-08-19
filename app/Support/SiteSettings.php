@@ -2,7 +2,7 @@
 
 namespace App\Support;
 
-use App\Models\Setting;
+use App\Models\Settings\Setting;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Schema;
 
@@ -68,18 +68,52 @@ class SiteSettings
     {
         return [
             // store
-            'store_name' => 'Amar Store',
-            'store_email' => 'info@amarstore.com',
-            'store_phone' => '+249 90 000 0000',
-            'store_address' => 'الخرطوم، السودان',
+            'store_name' => 'AN SHOP',
+            'store_email' => 'contact@anshop.dz',
+            'store_phone' => '+213 550 00 00 00',
+            'store_phone_secondary' => '',
+            'store_address' => 'الجزائر العاصمة',
+            'store_wilaya' => 'الجزائر',
+            'store_commune' => 'باب الزوار',
+            'store_postal_code' => '16000',
+            'store_website' => 'https://anshop.dz',
             'store_description' => 'متجر إلكتروني متكامل يوفر لك تجربة تسوق فريدة',
 
-            // social
+            // invoice info
+            'invoice_business_name' => 'AN SHOP',
+            'invoice_legal_name' => 'AN SHOP SARL',
+            'invoice_rc' => '',
+            'invoice_nif' => '',
+            'invoice_nis' => '',
+            'invoice_phone' => '+213 550 00 00 00',
+            'invoice_address' => 'الجزائر العاصمة',
+            'invoice_email' => 'contact@anshop.dz',
+            'invoice_notes' => 'شكراً لتسوقكم من AN SHOP',
+
+            // printing settings
+            'printing_default_invoice_template' => '',
+            'printing_default_label_template' => '',
+            'printing_default_invoice_size' => 'a4',
+            'printing_default_label_size' => '100x150',
+            'printing_show_logo' => '1',
+            'printing_show_barcode' => '1',
+            'printing_show_qr' => '0',
+            'printing_auto_generate_invoice' => '1',
+
+            // social (old keys — kept as fallback for frontend)
             'facebook_url' => '',
             'twitter_url' => '',
             'instagram_url' => '',
             'whatsapp_number' => '',
             'youtube_url' => '',
+            // social (new keys — canonical)
+            'social_whatsapp' => '',
+            'social_facebook' => '',
+            'social_instagram' => '',
+            'social_tiktok' => '',
+            'social_youtube' => '',
+            'social_telegram' => '',
+            'social_snapchat' => '',
 
             // contact
             'contact_email' => 'info@amarstore.com',
@@ -87,12 +121,16 @@ class SiteSettings
             'contact_whatsapp' => '',
             'contact_address' => 'الخرطوم، السودان',
             'contact_hours' => '24/7 - متاحون دائماً',
+            'contact_working_hours' => '',
+            'contact_support_hours' => '',
 
             // seo
             'seo_meta_title' => '',
             'seo_meta_description' => '',
             'seo_meta_keywords' => '',
             'seo_og_image' => '',
+            'seo_ga_id' => '',
+            'seo_fb_pixel' => '',
 
             // customize
             'site_theme' => 'light',
@@ -114,6 +152,14 @@ class SiteSettings
             'show_featured' => '1',
             'show_latest' => '1',
             'show_categories' => '1',
+            'show_hero' => '1',
+            'show_marquee' => '1',
+            'show_banner_1' => '1',
+            'home_section_order' => '["hero","marquee","categories","featured","latest","banner_1","banner_2"]',
+            'slider_animation_duration' => 500,
+            'slider_entrance_stagger' => 80,
+            'slider_default_animation' => 'fade',
+            'slider_default_entrance' => 'fade-up',
             'footer_about' => 'متجر إلكتروني متكامل يوفر لك تجربة تسوق فريدة مع شحن سريع ودفع آمن عند الاستلام.',
             'footer_copyright' => 'جميع الحقوق محفوظة',
         ];

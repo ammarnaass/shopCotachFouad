@@ -4,7 +4,7 @@
 
 @section('content')
 @php
-    use App\Models\User;
+    use App\Models\User\User;
     $totalUsers = User::count();
     $adminsCount = User::where('role', 'admin')->count();
     $managersCount = User::where('role', 'manager')->count();

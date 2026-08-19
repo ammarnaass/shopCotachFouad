@@ -2,7 +2,8 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\User;
+use App\Models\User\Role;
+use App\Models\User\User;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -25,6 +26,7 @@ class AuthController extends Controller
 
         if (Auth::attempt($credentials, $request->boolean('remember'))) {
             $request->session()->regenerate();
+
             return redirect()->intended(route('home'));
         }
 
@@ -49,7 +51,7 @@ class AuthController extends Controller
 
         $countries = config('ecommerce.countries', []);
         $dial = $countries[$data['country_code']]['dial_code'] ?? '';
-        $fullPhone = $dial . $data['phone'];
+        $fullPhone = $dial.$data['phone'];
 
         $user = User::create([
             'name' => $data['name'],
@@ -62,12 +64,13 @@ class AuthController extends Controller
             'status' => 'active',
         ]);
 
-        $customerRole = \App\Models\Role::where('name', 'customer')->first();
+        $customerRole = Role::where('name', 'customer')->first();
         if ($customerRole) {
             $user->roles()->attach($customerRole);
         }
 
         Auth::login($user);
+
         return redirect()->route('home')->with('success', 'تم التسجيل بنجاح');
     }
 
@@ -76,6 +79,7 @@ class AuthController extends Controller
         Auth::logout();
         $request->session()->invalidate();
         $request->session()->regenerateToken();
+
         return redirect()->route('home');
     }
 }

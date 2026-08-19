@@ -72,7 +72,7 @@
          x-transition:leave-start="opacity-100 scale-100"
          x-transition:leave-end="opacity-0 scale-95"
          @click.outside="$store.quickView.close()"
-         class="relative bg-white rounded-2xl shadow-soft-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto"
+         class="relative bg-white text-on-surface rounded-2xl shadow-soft-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto"
          x-html="$store.quickView?.html ?? ''">
     </div>
 </div>

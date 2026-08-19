@@ -493,6 +493,9 @@
                                     <a href="{{ route('admin.shipping.label.show', $label) }}" class="p-1 text-on-surface-variant hover:text-primary transition-colors" title="{{ __t('admin.shipping.view') }}">
                                         <span class="material-symbols-outlined">visibility</span>
                                     </a>
+                                    <a href="{{ route('admin.shipping.label.pdf', $label) }}" class="p-1 text-on-surface-variant hover:text-primary transition-colors" title="{{ __t('admin.shipping.download_label') }}">
+                                        <span class="material-symbols-outlined">picture_as_pdf</span>
+                                    </a>
                                     @if($label->status === 'pending')
                                         <form action="{{ route('admin.shipping.label.updateStatus', $label) }}" method="POST" class="inline">
                                             @csrf

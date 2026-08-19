@@ -2,8 +2,8 @@
 
 namespace App\Helpers;
 
-use App\Models\Language;
-use App\Models\Translation;
+use App\Models\Settings\Language;
+use App\Models\Settings\Translation;
 use Illuminate\Support\Facades\Cache;
 
 class Trans
@@ -17,7 +17,7 @@ class Trans
 
         $cacheKey = "translations_{$locale}_{$group}";
 
-        if (!isset(self::$translations[$cacheKey])) {
+        if (! isset(self::$translations[$cacheKey])) {
             self::$translations[$cacheKey] = Cache::remember($cacheKey, 3600, function () use ($langId, $group) {
                 return Translation::where('language_id', $langId)
                     ->where('group', $group)

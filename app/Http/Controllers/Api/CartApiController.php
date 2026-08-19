@@ -18,6 +18,7 @@ class CartApiController extends Controller
     public function index(): JsonResponse
     {
         $cart = $this->cartService->getCart();
+
         return response()->json(['success' => true, 'data' => $cart->load('items.product', 'items.variant', 'coupon')]);
     }
 
@@ -42,12 +43,14 @@ class CartApiController extends Controller
     {
         $request->validate(['quantity' => 'required|integer|min:0']);
         $item = $this->cartService->updateQuantity($itemId, $request->quantity);
+
         return response()->json(['success' => true, 'data' => $item]);
     }
 
     public function destroy(int $itemId): JsonResponse
     {
         $this->cartService->removeItem($itemId);
+
         return response()->json(['success' => true]);
     }
 
@@ -55,21 +58,32 @@ class CartApiController extends Controller
     {
         $request->validate(['code' => 'required|string']);
         $coupon = $this->cartService->applyCoupon($request->code);
-        if (!$coupon) {
+        if (! $coupon) {
             return response()->json(['success' => false, 'message' => 'كود غير صالح'], 422);
         }
+
         return response()->json(['success' => true, 'message' => 'تم التطبيق', 'data' => $coupon]);
     }
 
     public function calculateShipping(Request $request): JsonResponse
     {
-        $request->validate(['city' => 'required|string', 'method' => 'nullable|in:standard,express']);
+        $request->validate([
+            'city' => 'required|string',
+            'state_code' => 'nullable|string|max:5',
+            'method' => 'nullable|in:standard,express',
+        ]);
         $cart = $this->cartService->getCart();
         $cost = $this->orderService->calculateShipping(
             $request->city,
             $request->method ?? 'standard',
-            $cart->subtotal - $cart->discount
+            $cart->subtotal - $cart->discount,
+            null,
+            'home',
+            0,
+            null,
+            $request->state_code
         );
+
         return response()->json(['success' => true, 'shipping_cost' => $cost, 'is_free' => $cost === 0]);
     }
 }

@@ -1,0 +1,146 @@
+@php
+    // PRD Navigation Structure
+    $navItems = [
+        ['type' => 'nav-home', 'text' => __t('nav.home'), 'route' => 'home', 'icon' => 'home', 'show' => site('nav_show_home', '1') == '1'],
+        ['type' => 'nav-products', 'text' => __t('nav.products'), 'route' => 'shop.index', 'icon' => 'basket', 'show' => site('nav_show_products', '1') == '1'],
+    ];
+
+    if (site('nav_show_categories', '1') == '1') {
+        $visibleCategories = \App\Models\Catalog\Category::where('status', 'active')
+            ->whereNull('parent_id')
+            ->orderBy('order')
+            ->limit(6)
+            ->get();
+        foreach ($visibleCategories as $category) {
+            $navItems[] = [
+                'type' => 'nav-category',
+                'text' => $category->name,
+                'route' => 'shop.category',
+                'params' => ['slug' => $category->slug],
+                'show' => true,
+                'icon' => 'category'
+            ];
+        }
+    }
+@endphp
+
+<!-- PRD Compliant Mobile-First Header -->
+<header class="sticky top-0 z-40 bg-white border-b border-outline-variant shadow-sm" 
+        x-data="{
+            mobileMenu: false,
+            searchOpen: false,
+            userMenu: false,
+        }" @click.outside="toggleOutside('mobileMenu')" 
+        x-cloak>
+    <div class="container-app flex justify-between items-center h-16 max-w-full mx-auto">
+        {{-- Logo Section --}}
+        <a href="{{ route('home') }}" class="flex items-center gap-2 shrink-0 no-underline">
+            @php $storeLogo = site('store_logo'); ?>
+            @if($storeLogo)
+                <img src="{{ $storeLogo }}" alt="{{ site('store_name') }}" class="w-8 h-8 rounded-full border-[1.5px] border-tertiary-container overflow-hidden">
+            @else
+                <div class="w-8 h-8 rounded-full border-[1.5px] border-tertiary-container bg-inverse-surface flex-shrink-0 flex items-center justify-center">
+                    <span class="material-symbols-outlined text-brown-600 text-sm">fitness_center</span>
+                </div>
+            @endif
+            <span class="leading-none text-[12px] text-on-surface fw-bolder tracking-[0.5px] font-semibold text-accent-500">
+                {{ site('store_name', 'AN Shop') }}
+            </span>
+        </a>
+
+        {{-- Desktop Navigation --}}
+        <nav class="hidden md:flex items-center gap-1">
+            @foreach($navItems as $item)
+                @if($item['show'])
+                    @php $isActive = request()->routeIs($item['route']);
+                    <a class="text-sm transition-all duration-200 px-3 py-1.5 rounded-full {{ $isActive ? 'bg-primary text-white' : 'text-secondary hover:text-primary' }}" 
+                       href="{{ route($item['route'], ...collect($item['params'])->all()) }}">
+                        <span class="material-symbols-outlined text-lg mr-1">{{ $item['icon'] }}</span>
+                        {{ $item['text'] }}
+                    </a>
+                @endif
+            @endforeach
+        </nav>
+
+        {{-- Desktop Search & Actions --}}
+        <div class="hidden lg:flex flex-1 max-w-md mx-6 relative">
+            <!-- Search Component -->
+            <form action="{{ route('shop.index') }}" method="GET" class="relative w-full">
+                <span class="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 text-outline">search</span>
+                <input type="text" name="q" class="w-full pr-10 pl-4 py-1.5 bg-surface-container-low border border-outline-variant rounded-full focus:outline-none focus:ring-2 focus:border-transparent text-sm"
+                       placeholder="{{ __t('nav.search_placeholder') }}" autocomplete="off">
+            </form>
+        </div>
+
+        {{-- Actions --}}
+        <div class="flex items-center gap-1.5">
+            {{-- Wishlist --}}
+<a href="{{ route('wishlist.index') }}" class="material-symbols-outlined mt-2.5 px-2.5 hover:bg-gray-100 rounded-full">
+    favorite
+    @if($wishlistCount > 0)
+        <span class="absolute top-1 right-1 text-white text-[8px] w-4 h-4 rounded-full flex items-center justify-center font-bold shadow-md">
+            {{ $wishlistCount }}
+        </span>
+    @endif
+</a>
+
+            {{-- Cart --}}
+            <a href="{{ route('cart.index') }}" class="material-symbols-outlined mt-2.5 px-2.5 hover:bg-gray-100 rounded-full">
+                shopping_cart
+                @if($store->cart->count() > 0)
+                    <span class="absolute top-1 right-1 bg-accent-500 text-white text-[8px] w-4 h-4 rounded-full flex items-center justify-center font-bold shadow-md">
+                        {{ $store->cart->count() }}
+                    </span>
+                @endif
+            </a>
+        </div>
+    </div>
+
+    {{-- Mobile Menu Toggle --}}
+    <button @click="mobileMenu = !mobileMenu" class="lg:hidden md:hidden material-symbols-outlined text-primary p-2 hover:bg-gray-100 rounded-full">
+        menu
+    </button>
+</header>
+
+<!-- Mobile Navigation Drawer -->
+<div x-show="mobileMenu" x-collapse x-cloak class="fixed inset-0 z-50 md:hidden">
+    <div class="absolute inset-y-0 {{ is_rtl() ? 'left-0' : 'right-0' }} w-72 max-w-[85vw] bg-white shadow-2xl flex flex-col">
+        @php $mobileNavItems = array_merge(
+            [['icon' => 'home', 'text' => __t('nav.home'), 'route' => 'home']], 
+            array_map(function($cat) { return ['icon' => 'category', 'text' => $cat->name, 'route' => 'shop.category', 'params' => ['slug' => $cat->slug]]}, 
+            \App\Models\Catalog\Category::where('status', 'active')->whereNull('parent_id')->limit(6)->get()->all()
+        ); @endphp
+        @foreach($mobileNavItems as $item)
+            @if($item['route'] == 'home' && request()->routeIs('home'))
+                <a href="{{ route('home') }}" class="flex items-center gap-3 px-5 py-3 text-sm rounded-lg bg-primary text-white">
+                    <span class="material-symbols-outlined text-lg mr-1">{{ $item['icon'] }}</span> {{ $item['text'] }}
+                </a>
+            @else
+                @if($item['route'] == 'shop.index')
+                    <a href="{{ route('shop.index') }}" class="flex items-center gap-3 px-5 py-3 text-sm rounded-lg bg-primary text-white">
+                        <span class="material-symbols-outlined text-lg mr-1">{{ $item['icon'] }}</span> {{ $item['text'] }}
+                    </a>
+                @else
+                    @if($item['params'] ?? [])
+                        <a href="{{ route($item['route'], ...collect($item['params']->all()) }}" class="flex items-center gap-3 px-5 py-3 text-sm rounded-lg bg-primary text-white">
+                            <span class="material-symbols-outlined text-lg mr-1">{{ $item['icon'] }}</span> {{ $item['text'] }}
+                        </a>
+                    @else
+                        <a href="{{ route('page.show', ['slug' => $item['slug']]) }}" class="flex items-center gap-3 px-5 py-3 text-sm rounded-lg bg-primary text-white">
+                            <span class="material-symbols-outlined text-lg mr-1">{{ $item['icon'] }}</span> {{ $item['text'] }}
+                        </a>
+                    @endif
+                @endif
+            @endforeach
+        </div>
+
+        {{-- Mobile Search Bar --}}
+        <div class="border-t border-outline-variant bg-white py-2">
+            <form action="{{ route('shop.index') }}" method="GET" class="relative">
+                <input type="text" name="q" class="w-full pr-10 pl-4 py-2 bg-surface-container-low border border-outline-variant rounded-full text-sm" 
+                       placeholder="{{ __t('nav.search_placeholder') }}" autocomplete="off">
+                <span class="material-symbols-outlined absolute top-1/2 -translate-y-1/2 right-4 text-gray-400">search</span>
+            </form>
+        </div>
+    </div>
+</div>

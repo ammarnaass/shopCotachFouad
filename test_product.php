@@ -6,7 +6,7 @@ $kernel = $app->make(Illuminate\Contracts\Http\Kernel::class);
 $kernel->bootstrap();
 
 try {
-    $product = \App\Models\Product::active()
+    $product = \App\Models\Catalog\Product::active()
         ->with(['category', 'images', 'options.values', 'variants', 'customFields', 'reviews.user'])
         ->where('slug', 'classic-jeans')
         ->firstOrFail();

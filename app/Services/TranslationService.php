@@ -2,8 +2,8 @@
 
 namespace App\Services;
 
-use App\Models\Language;
-use App\Models\Translation;
+use App\Models\Settings\Language;
+use App\Models\Settings\Translation;
 use Illuminate\Support\Facades\App;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\File;

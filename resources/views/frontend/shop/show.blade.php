@@ -85,14 +85,65 @@
 @endpush
 
 @section('content')
-<div class="bg-gray-50 product-detail"
-     x-data="instantBuyForm()"
-      x-init='setup(@json($product->id), @json($product->name), @json($product->price), @json($product->final_price), @json($product->sale_price), @json($imageList), @json($product->stock), @json($product->sku), @json($product->weight ?? 0), @json($countries), @json($defaultCountry), @json($defaultState), @json($countrySymbol), @json($authUserData), @json(conversionRate()), @json($ibS('is_enabled')))'
+<div class="bg-gray-50 product-detail text-on-surface transition-colors"
+     x-data="instantBuyForm"
+      x-init="setup(@json([
+          'id' => $product->id,
+          'name' => $product->name,
+          'basePrice' => $product->price,
+          'finalPrice' => $product->final_price,
+          'salePrice' => $product->sale_price,
+          'images' => $imageList,
+          'stock' => $product->stock,
+          'sku' => $product->sku,
+          'weight' => $product->weight ?? 0,
+          'countries' => $countries,
+          'defaultCountry' => $defaultCountry,
+          'defaultState' => $defaultState,
+          'defaultSymbol' => $countrySymbol,
+          'authUser' => $authUserData,
+          'conversionRate' => conversionRate(),
+          'ibEnabled' => (bool) $ibS('is_enabled'),
+          'selectedOptions' => $hasOptions ? $product->options->mapWithKeys(fn($o) => [$o->id => null])->toArray() : [],
+          'optionsAdjustments' => $hasOptions ? $product->options->reduce(function ($carry, $o) { foreach ($o->values as $v) { $carry[(int) $v->id] = (float) $v->price_adjustment; } return $carry; }, []) : [],
+          'customFieldPrice' => (float) ($product->customFields->whereIn('type', ['text', 'textarea'])->first()?->price_effect ?? 0),
+          'categoryName' => $product->category?->name,
+          'categorySlug' => $product->category?->slug,
+          'storeCountry' => config('ecommerce.store.default_country', 'DZ'),
+          'validationRules' => collect([
+              ['field' => 'countryCode', 'enabled' => $ibS('field_country_enabled'), 'required' => $ibS('field_country_required')],
+              ['field' => 'city', 'enabled' => $ibS('field_city_enabled'), 'required' => $ibS('field_city_required')],
+              ['field' => 'form.phone', 'enabled' => $ibS('field_phone_enabled'), 'required' => $ibS('field_phone_required')],
+              ['field' => 'form.address', 'enabled' => $ibS('field_address_enabled'), 'required' => $ibS('field_address_required')],
+              ['field' => 'form.first_name', 'enabled' => $ibS('field_first_name_enabled'), 'required' => $ibS('field_first_name_required')],
+              ['field' => 'form.last_name', 'enabled' => $ibS('field_last_name_enabled'), 'required' => $ibS('field_last_name_required')],
+              ['field' => 'form.email', 'enabled' => $ibS('field_email_enabled'), 'required' => $ibS('field_email_required')],
+              ['field' => 'stateCode', 'enabled' => $ibS('field_state_enabled'), 'required' => $ibS('field_state_required')],
+              ['field' => 'form.district', 'enabled' => $ibS('field_district_enabled'), 'required' => $ibS('field_district_required')],
+              ['field' => 'form.zip', 'enabled' => $ibS('field_zip_enabled'), 'required' => $ibS('field_zip_required')],
+          ])->where('enabled', true)->where('required', true)->values()->map(fn($r) => ['field' => $r['field']])->values()->toArray(),
+          'routes' => [
+              'calculateNew' => route('instant-buy.calculate'),
+              'calculate' => route('instant.calculate'),
+              'shippingOptionsNew' => route('instant-buy.shipping-options'),
+              'shippingOptions' => route('instant.shipping-options'),
+              'couponNew' => route('instant-buy.coupon'),
+              'coupon' => route('instant.coupon'),
+          ],
+          't' => [
+              'fillRequired' => __t('shop.show.fill_required'),
+              'couponInvalid' => __t('shop.show.coupon_invalid'),
+              'couponError' => __t('shop.show.coupon_error'),
+              'orderError' => __t('shop.show.order_error'),
+              'generalError' => __t('shop.show.general_error'),
+              'submitError' => __t('shop.show.submit_error'),
+          ],
+      ]))"
       :style='ibEnabled && {{ $ibS('is_enabled') ? 'true' : 'false' }} ? { backgroundColor: "{{ $ibS('form_bg_color') }}", border: "{{ $ibS('form_border_width') }}px solid {{ $ibS('form_border_color') }}", borderRadius: "{{ $ibS('form_border_radius') }}px", boxShadow: "{{ $ibS('form_shadow') }}" } : {}'>
 
 
     {{-- ============ BREADCRUMB ============ --}}
-    <div class="bg-white border-b">
+    <div class="bg-white border-b border-gray-200">
         <div class="container-app py-3">
             <nav class="flex items-center gap-2 text-sm text-gray-500 flex-wrap">
                 <a href="{{ route('home') }}" class="hover:text-blue-600 flex items-center gap-1">
@@ -123,11 +174,11 @@
             <div class="lg:col-span-2 space-y-5">
 
                 {{-- Product card --}}
-                <div class="bg-white rounded-2xl shadow-sm overflow-hidden">
+                <div class="bg-white border border-outline-variant rounded-2xl shadow-sm overflow-hidden">
                     <div class="grid md:grid-cols-2 gap-0">
                         {{-- Images --}}
                         <div class="bg-gradient-to-br from-gray-50 to-gray-100 p-4 md:p-6">
-                            <div class="aspect-square bg-white rounded-xl overflow-hidden mb-3 relative border">
+                            <div class="aspect-square bg-white rounded-xl overflow-hidden mb-3 relative border border-gray-200">
                                 <template x-for="(img, i) in images" :key="i">
                                     <img :src="img" :alt="product.name"
                                          x-show="activeImage === i"
@@ -233,7 +284,7 @@
 
                 {{-- Options --}}
                 @if($hasOptions)
-                    <div class="bg-white rounded-2xl shadow-sm p-5">
+                    <div class="bg-white border border-outline-variant rounded-2xl shadow-sm p-5">
                         <h2 class="text-lg font-bold mb-4 flex items-center gap-2">
                             <span class="material-symbols-outlined text-blue-600">tune</span>
                             {{ __t('product.specifications') }}
@@ -273,7 +324,7 @@
 
                 {{-- Custom Fields --}}
                 @if($hasCustomFields)
-                    <div class="bg-white rounded-2xl shadow-sm p-5">
+                    <div class="bg-white border border-outline-variant rounded-2xl shadow-sm p-5">
                         <h2 class="text-lg font-bold mb-4 flex items-center gap-2">
                             <span class="material-symbols-outlined text-blue-600">edit_note</span>
                             {{ __t('instant.custom_fields') }}
@@ -305,7 +356,7 @@
                 @endif
 
                 {{-- Description Tabs --}}
-                <div class="bg-white rounded-2xl shadow-sm p-5" x-data="{ tab: 'description' }">
+                <div class="bg-white border border-outline-variant rounded-2xl shadow-sm p-5" x-data="{ tab: 'description' }">
                     <div class="flex border-b mb-4">
                         <button type="button" @click="tab = 'description'"
                                 :class="tab === 'description' ? 'border-blue-600 text-blue-600' : 'border-transparent text-gray-500'"
@@ -353,7 +404,7 @@
                 <div class="sticky top-4 space-y-4">
 
                     {{-- ===== Customer Info ===== --}}
-                    <div class="bg-white rounded-2xl shadow-sm p-5">
+                    <div class="bg-white border border-outline-variant rounded-2xl shadow-sm p-5">
                         <h2 class="text-base font-bold mb-4 flex items-center gap-2 text-gray-800">
                             <span class="material-symbols-outlined text-blue-600">account_circle</span>
                             {{ __t('instant.customer_info') }}
@@ -401,7 +452,7 @@
                     </div>
 
                     {{-- ===== Shipping Address ===== --}}
-                    <div class="bg-white rounded-2xl shadow-sm p-5">
+                    <div class="bg-white border border-outline-variant rounded-2xl shadow-sm p-5">
                         <h2 class="text-base font-bold mb-4 flex items-center gap-2 text-gray-800">
                             <span class="material-symbols-outlined text-blue-600">local_shipping</span>
                             {{ __t('instant.shipping_data') }}
@@ -466,7 +517,7 @@
                     </div>
 
                     {{-- ===== Shipping Method (dynamic from admin settings) ===== --}}
-                    <div class="bg-white rounded-2xl shadow-sm p-5">
+                    <div class="bg-white border border-outline-variant rounded-2xl shadow-sm p-5">
                         <h2 class="text-base font-bold mb-3 flex items-center gap-2 text-gray-800">
                             <i class="fas fa-shipping-fast text-blue-600"></i>
                             {{ __t('instant.shipping_method') }}
@@ -512,7 +563,7 @@
                     </div>
 
                     {{-- ===== Payment Method ===== --}}
-                    <div class="bg-white rounded-2xl shadow-sm p-5">
+                    <div class="bg-white border border-outline-variant rounded-2xl shadow-sm p-5">
                         <h2 class="text-base font-bold mb-3 flex items-center gap-2 text-gray-800">
                             <i class="fas fa-credit-card text-blue-600"></i>
                             {{ __t('instant.payment_method') }}
@@ -554,7 +605,7 @@
 
                     {{-- ===== Notes ===== --}}
                     @if($ibS('field_notes_enabled'))
-                    <div class="bg-white rounded-2xl shadow-sm p-5">
+                    <div class="bg-white border border-outline-variant rounded-2xl shadow-sm p-5">
                         <h2 class="text-base font-bold mb-3 flex items-center gap-2 text-gray-800">
                             <i class="fas fa-note-sticky text-blue-600"></i>
                             {{ $ibS('field_notes_label') ?? __t('instant.notes') }} @if(!$ibS('field_notes_required'))({{ __t('common.optional') }})@endif
@@ -567,7 +618,7 @@
 
                     {{-- ===== Coupon ===== --}}
                     @if($ibS('field_coupon_enabled'))
-                    <div class="bg-white rounded-2xl shadow-sm p-5">
+                    <div class="bg-white border border-outline-variant rounded-2xl shadow-sm p-5">
                         <h2 class="text-base font-bold mb-3 flex items-center gap-2 text-gray-800">
                             <i class="fas fa-ticket text-blue-600"></i>
                             {{ $ibS('field_coupon_label') ?? __t('instant.coupon') }}
@@ -649,15 +700,15 @@
                         </div>
 
                         <button type="submit" :disabled="submitting || !canSubmit"
-                                class="w-full py-4 rounded-xl font-bold text-lg text-white shadow-lg transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-                                :class="canSubmit ? 'bg-gradient-to-l from-blue-600 via-indigo-600 to-purple-600 hover:shadow-2xl hover:-translate-y-0.5' : 'bg-gray-400'">
-                            <span x-show="!submitting">
-                                <i class="fas fa-check-circle"></i>
+                                class="w-full py-4 rounded-xl font-sora font-extrabold text-base sm:text-lg shadow-lg transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                                :class="canSubmit ? 'bg-primary-container text-on-primary-container hover:bg-inverse-primary hover:scale-[1.02] active:scale-95 shadow-md' : 'bg-surface-dim text-secondary'">
+                            <span x-show="!submitting" class="flex items-center justify-center gap-2">
+                                <span class="material-symbols-outlined">check_circle</span>
                                 <span>{{ __t('instant.complete_order') }} — <span x-text="formatMoney(grandTotal) + ' ' + currencySymbol"></span></span>
                             </span>
-                            <span x-show="submitting" class="flex items-center gap-2">
-                                <i class="fas fa-spinner fa-spin"></i>
-                                {{ __t('instant.submitting') }}...
+                            <span x-show="submitting" class="flex items-center justify-center gap-2">
+                                <span class="material-symbols-outlined animate-spin">progress_activity</span>
+                                <span>{{ __t('common.processing') }}</span>
                             </span>
                         </button>
 

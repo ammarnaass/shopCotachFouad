@@ -3,7 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
-use App\Models\Order;
+use App\Models\Order\Order;
 use App\Services\OrderService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -43,6 +43,7 @@ class OrderApiController extends Controller
 
         try {
             $order = $this->orderService->createOrder($request->all());
+
             return response()->json([
                 'success' => true,
                 'message' => 'تم إنشاء الطلب',
@@ -67,6 +68,7 @@ class OrderApiController extends Controller
         $order = Order::where('user_id', $request->user()->id)->findOrFail($id);
         try {
             $this->orderService->cancelOrder($order, $request->get('reason'));
+
             return response()->json(['success' => true, 'message' => 'تم الإلغاء']);
         } catch (\Exception $e) {
             return response()->json(['success' => false, 'message' => $e->getMessage()], 422);

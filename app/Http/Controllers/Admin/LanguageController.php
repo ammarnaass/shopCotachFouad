@@ -3,8 +3,8 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
-use App\Models\Language;
-use App\Models\Translation;
+use App\Models\Settings\Language;
+use App\Models\Settings\Translation;
 use App\Services\TranslationService;
 use Illuminate\Http\Request;
 
@@ -20,6 +20,7 @@ class LanguageController extends Controller
     public function index()
     {
         $languages = Language::ordered()->get();
+
         return view('admin.languages.index', compact('languages'));
     }
 
@@ -59,7 +60,7 @@ class LanguageController extends Controller
 
     public function toggleActive(Language $language)
     {
-        $language->update(['is_active' => !$language->is_active]);
+        $language->update(['is_active' => ! $language->is_active]);
         $this->translationService->cacheFlush();
 
         return back()->with('success', $language->is_active ? 'تم تفعيل اللغة' : 'تم إلغاء تفعيل اللغة');
@@ -167,6 +168,7 @@ class LanguageController extends Controller
     public function settings()
     {
         $languages = Language::active()->ordered()->get();
+
         return view('admin.languages.settings', compact('languages'));
     }
 
@@ -183,6 +185,6 @@ class LanguageController extends Controller
         $language->update($data);
         $this->translationService->cacheFlush();
 
-        return back()->with('success', 'تم حفظ إعدادات التنسيق للغة ' . $language->name);
+        return back()->with('success', 'تم حفظ إعدادات التنسيق للغة '.$language->name);
     }
 }

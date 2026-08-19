@@ -12,7 +12,9 @@
 @endpush
 
 @php
-    $shippingLabel = \App\Models\ShippingLabel::where('order_id', $order->id)->first();
+    $shippingLabel = \App\Models\Shipping\ShippingLabel::where('order_id', $order->id)->first();
+    $invoiceTemplates = \App\Models\Documents\InvoiceTemplate::where('status', true)->orderBy('is_default', 'desc')->orderBy('name')->get();
+    $labelTemplates   = \App\Models\Documents\LabelTemplate::where('status', true)->orderBy('is_default', 'desc')->orderBy('name')->get();
 @endphp
 
 {{-- Breadcrumb & Actions --}}
@@ -79,7 +81,7 @@
             @csrf
             <div class="relative">
                 <select name="status" required class="appearance-none pr-4 pl-10 py-2.5 bg-primary text-white border-none rounded-xl text-sm font-medium focus:ring-0 cursor-pointer">
-                    @foreach(\App\Models\Order::STATUSES as $key => $label)
+                    @foreach(\App\Models\Order\Order::STATUSES as $key => $label)
                         <option value="{{ $key }}" {{ $order->status === $key ? 'selected' : '' }}>{{ $label }}</option>
                     @endforeach
                 </select>
@@ -100,6 +102,64 @@
                 {{ __t('admin.orders.print_label') }}
             </a>
         @endif
+
+        {{-- Invoice Printing Dropdown --}}
+        <div class="relative inline-block text-right" x-data="{ open: false, templateId: '' }" @click.outside="open = false">
+            <button @click="open = !open" type="button" class="px-4 py-2.5 bg-white text-on-surface border border-outline-variant rounded-xl font-label-md text-label-md hover:bg-surface-container-low transition-all flex items-center gap-2 shadow-sm">
+                <span class="material-symbols-outlined text-[20px] text-primary">receipt</span>
+                الفاتورة
+                <span class="material-symbols-outlined text-[16px]">expand_more</span>
+            </button>
+            <div x-show="open" x-cloak class="absolute left-0 mt-2 w-56 bg-white rounded-xl shadow-xl border border-outline-variant z-50 py-1 text-xs">
+                @if($invoiceTemplates->isNotEmpty())
+                    <div class="px-3 py-2 border-b border-outline-variant">
+                        <label class="block text-[11px] font-bold text-on-surface-variant mb-1">قالب الفاتورة</label>
+                        <select x-model.number="templateId" class="w-full p-1.5 border border-outline-variant rounded-lg text-xs bg-white">
+                            @foreach($invoiceTemplates as $tpl)
+                                <option value="{{ $tpl->id }}">{{ $tpl->name }}@if($tpl->is_default) (افتراضي)@endif</option>
+                            @endforeach
+                        </select>
+                    </div>
+                @endif
+                <a :href="templateId ? '{{ route('admin.orders.invoice', ['order' => $order->id, 'print' => 1]) }}&template_id=' + templateId : '{{ route('admin.orders.invoice', ['order' => $order->id, 'print' => 1]) }}'" target="_blank" class="flex items-center gap-2 px-4 py-2 hover:bg-surface-container-low text-on-surface font-medium">
+                    <span class="material-symbols-outlined text-[16px]">print</span>
+                    معاينة / طباعة
+                </a>
+                <a :href="templateId ? '{{ route('admin.orders.invoice', ['order' => $order->id]) }}?template_id=' + templateId : '{{ route('admin.orders.invoice', ['order' => $order->id]) }}'" class="flex items-center gap-2 px-4 py-2 hover:bg-surface-container-low text-on-surface font-medium">
+                    <span class="material-symbols-outlined text-[16px]">download</span>
+                    تحميل PDF
+                </a>
+            </div>
+        </div>
+
+        {{-- Label Printing Dropdown --}}
+        <div class="relative inline-block text-right" x-data="{ open: false, templateId: '' }" @click.outside="open = false">
+            <button @click="open = !open" type="button" class="px-4 py-2.5 bg-white text-on-surface border border-outline-variant rounded-xl font-label-md text-label-md hover:bg-surface-container-low transition-all flex items-center gap-2 shadow-sm">
+                <span class="material-symbols-outlined text-[20px] text-primary">label</span>
+                ملصق الشحن
+                <span class="material-symbols-outlined text-[16px]">expand_more</span>
+            </button>
+            <div x-show="open" x-cloak class="absolute left-0 mt-2 w-56 bg-white rounded-xl shadow-xl border border-outline-variant z-50 py-1 text-xs">
+                @if($labelTemplates->isNotEmpty())
+                    <div class="px-3 py-2 border-b border-outline-variant">
+                        <label class="block text-[11px] font-bold text-on-surface-variant mb-1">قالب الملصق</label>
+                        <select x-model.number="templateId" class="w-full p-1.5 border border-outline-variant rounded-lg text-xs bg-white">
+                            @foreach($labelTemplates as $tpl)
+                                <option value="{{ $tpl->id }}">{{ $tpl->name }}@if($tpl->is_default) (افتراضي)@endif</option>
+                            @endforeach
+                        </select>
+                    </div>
+                @endif
+                <a :href="templateId ? '{{ route('admin.orders.label', ['order' => $order->id, 'print' => 1]) }}&template_id=' + templateId : '{{ route('admin.orders.label', ['order' => $order->id, 'print' => 1]) }}'" target="_blank" class="flex items-center gap-2 px-4 py-2 hover:bg-surface-container-low text-on-surface font-medium">
+                    <span class="material-symbols-outlined text-[16px]">print</span>
+                    معاينة / طباعة
+                </a>
+                <a :href="templateId ? '{{ route('admin.orders.label', ['order' => $order->id]) }}?template_id=' + templateId : '{{ route('admin.orders.label', ['order' => $order->id]) }}'" class="flex items-center gap-2 px-4 py-2 hover:bg-surface-container-low text-on-surface font-medium">
+                    <span class="material-symbols-outlined text-[16px]">download</span>
+                    تحميل PDF
+                </a>
+            </div>
+        </div>
 
         @if($order->canBeCancelled())
             <form action="{{ route('admin.orders.destroy', $order) }}" method="POST" class="inline" onsubmit="return confirm('{{ __t('admin.orders.cancel_confirm') }}')">
@@ -300,7 +360,7 @@
                         </div>
                         <div class="pt-1 flex-1">
                             <p class="font-headline-sm text-headline-sm text-on-surface font-bold">
-                                {{ \App\Models\Order::STATUSES[$history->status] ?? $history->status }}
+                                {{ \App\Models\Order\Order::STATUSES[$history->status] ?? $history->status }}
                             </p>
                             <p class="text-on-surface-variant text-body-md mt-1">
                                 {{ $history->note ?? __t('admin.orders.auto_update_note') }}

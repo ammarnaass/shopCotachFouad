@@ -3,8 +3,8 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
-use App\Models\InstantBuyOrder;
-use App\Models\InstantBuySetting;
+use App\Models\InstantBuy\InstantBuyOrder;
+use App\Models\InstantBuy\InstantBuySetting;
 use Illuminate\Http\Request;
 
 class InstantBuySettingsController extends Controller
@@ -19,6 +19,7 @@ class InstantBuySettingsController extends Controller
             'confirmed' => InstantBuyOrder::where('status', 'confirmed')->count(),
             'cancelled' => InstantBuyOrder::where('status', 'cancelled')->count(),
         ];
+
         return view('admin.instant-buy.settings', compact('settings', 'orders', 'stats'));
     }
 
@@ -37,6 +38,7 @@ class InstantBuySettingsController extends Controller
             'trust_message' => 'nullable|string|max:255',
             'show_bank_transfer' => 'boolean',
         ]));
+
         return back()->with('success', 'تم حفظ الإعدادات العامة');
     }
 
@@ -68,6 +70,7 @@ class InstantBuySettingsController extends Controller
             'trust_message_color' => 'required|string|max:7',
             'trust_message_size' => 'required|integer|min:10|max:20',
         ]));
+
         return back()->with('success', 'تم حفظ الألوان');
     }
 
@@ -83,6 +86,7 @@ class InstantBuySettingsController extends Controller
                 "field_{$field}_placeholder" => $config['placeholder'] ?? null,
             ]);
         }
+
         return back()->with('success', 'تم حفظ إعدادات الحقول');
     }
 
@@ -101,6 +105,7 @@ class InstantBuySettingsController extends Controller
             'button_height' => 'required|integer|min:32|max:80',
             'field_coupon_button_text' => 'required|string|max:50',
         ]));
+
         return back()->with('success', 'تم حفظ إعدادات الأزرار');
     }
 
@@ -121,6 +126,7 @@ class InstantBuySettingsController extends Controller
             'success_order_number_color' => 'required|string|max:7',
             'success_order_number_size' => 'required|integer|min:14|max:36',
         ]));
+
         return back()->with('success', 'تم حفظ إعدادات النجاح');
     }
 
@@ -128,6 +134,7 @@ class InstantBuySettingsController extends Controller
     {
         InstantBuySetting::query()->delete();
         InstantBuySetting::create([]);
+
         return back()->with('success', 'تمت استعادة الإعدادات الافتراضية');
     }
 
@@ -143,6 +150,7 @@ class InstantBuySettingsController extends Controller
             'delivered' => InstantBuyOrder::where('status', 'delivered')->count(),
             'cancelled' => InstantBuyOrder::where('status', 'cancelled')->count(),
         ];
+
         return view('admin.instant-buy.orders', compact('orders', 'stats'));
     }
 
@@ -153,6 +161,7 @@ class InstantBuySettingsController extends Controller
             'payment_status' => 'required|in:pending,paid,failed',
         ]);
         $order->update($data);
+
         return back()->with('success', 'تم تحديث حالة الطلب');
     }
 }

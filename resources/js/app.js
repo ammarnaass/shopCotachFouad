@@ -4,6 +4,9 @@
 
 import './bootstrap';
 
+import Sortable from 'sortablejs';
+window.Sortable = Sortable;
+
 // Initialize Alpine.js (must run after DOM is ready)
 import './alpine/index.js';
 
@@ -16,6 +19,13 @@ import './alpine/stores/quickView.js';
 
 // Import Alpine component factories (registers Alpine.data() factories)
 import './alpine/components.js';
+
+// Import page-specific Alpine components
+import './pages/instant-buy.js';
+
+// Import vanilla JS components
+import './components/hero-slider.js';
+import './components/cart.js';
 
 /* ====================================================================
    GLOBAL HELPERS (vanilla JS, usable without Alpine)

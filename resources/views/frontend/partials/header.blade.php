@@ -3,7 +3,7 @@
     Receives the following from AppServiceProvider view composer:
       $navItems   — array of ['type' => home|products|category|page|contact, 'data' => Model|null, 'key' => string]
       $navCategories, $navPages
-    Receives per-page from controllers / composer:
+      Receives per-page from controllers / composer:
       $cartCount, $wishlistCount
 --}}
 
@@ -53,45 +53,45 @@
     </div>
 @endif
 
-<header class="sticky top-0 z-40 bg-white border-b border-gray-200 shadow-sm"
+<header class="sticky top-0 z-50 bg-surface-container-lowest border-b border-outline-variant transition-colors duration-200"
         x-data="{
             mobileMenu: false,
             searchOpen: false,
             userMenu: false,
+            langMenu: false
         }"
-        @keydown.escape.window="mobileMenu = false; searchOpen = false; userMenu = false">
+        @keydown.escape.window="mobileMenu = false; searchOpen = false; userMenu = false; langMenu = false">
 
-    <div class="container-app flex items-center justify-between h-16 gap-2">
+    <div class="container-app flex items-center justify-between h-20 gap-4">
 
         {{-- Logo --}}
-        <a href="{{ route('home') }}" class="flex items-center gap-2 shrink-0 min-w-0" aria-label="{{ $storeName }}">
+        <a href="{{ route('home') }}" class="font-sora text-xl sm:text-2xl font-black text-primary flex items-center gap-2 shrink-0 hover:opacity-90 transition-opacity" aria-label="{{ $storeName }}">
             @if($storeLogo)
-                <img src="{{ $storeLogo }}" alt="{{ $storeName }}" class="w-9 h-9 rounded-full object-cover" loading="eager">
+                <img src="{{ $storeLogo }}" alt="{{ $storeName }}" class="w-10 h-10 rounded-full object-cover" loading="eager">
             @else
-                <div class="w-9 h-9 rounded-full bg-gradient-to-br from-brand-500 to-accent-500 flex items-center justify-center text-white">
-                    <span class="material-symbols-outlined text-base">storefront</span>
+                <div class="w-10 h-10 rounded-full bg-primary-container text-on-primary-container flex items-center justify-center shadow-sm">
+                    <span class="material-symbols-outlined text-xl" style="font-variation-settings: 'FILL' 1;">fitness_center</span>
                 </div>
             @endif
-            <span class="hidden sm:flex flex-col leading-none">
-                <span class="font-extrabold text-[13px] tracking-wide text-on-surface truncate max-w-[160px]">{{ strtoupper($storeName) }}</span>
-                <span class="text-[10px] text-accent-500 font-semibold">{{ __t('nav.subtitle') }}</span>
+            <span class="flex flex-col leading-none">
+                <span class="font-sora font-black tracking-tight text-primary uppercase text-lg sm:text-xl">{{ $storeName }}</span>
             </span>
         </a>
 
         {{-- Desktop navigation --}}
-        <nav class="hidden lg:flex items-center gap-1" aria-label="{{ __t('nav.primary') }}">
+        <nav class="hidden lg:flex items-center gap-6" aria-label="{{ __t('nav.primary') }}">
             @foreach($navItems as $item)
                 @if(($item['type'] ?? '') === 'home' && site('nav_show_home', '1') === '1')
                     @php $active = request()->routeIs('home'); @endphp
                     <a href="{{ route('home') }}"
-                       class="px-3 py-1.5 text-sm rounded-full transition {{ $active ? 'bg-primary text-white font-semibold' : 'text-secondary hover:bg-surface-container-low hover:text-primary font-medium' }}"
+                       class="font-body-md text-sm font-bold transition-all {{ $active ? 'text-primary border-b-2 border-primary pb-1' : 'text-secondary hover:text-primary hover:bg-surface-container-low px-2.5 py-1 rounded-lg' }}"
                        {{ $active ? 'aria-current=page' : '' }}>
                         {{ __t('nav.home') }}
                     </a>
                 @elseif(($item['type'] ?? '') === 'products' && site('nav_show_products', '1') === '1')
                     @php $active = request()->routeIs('shop.index') && !request('featured'); @endphp
                     <a href="{{ route('shop.index') }}"
-                       class="px-3 py-1.5 text-sm rounded-full transition {{ $active ? 'bg-primary text-white font-semibold' : 'text-secondary hover:bg-surface-container-low hover:text-primary font-medium' }}"
+                       class="font-body-md text-sm font-bold transition-all {{ $active ? 'text-primary border-b-2 border-primary pb-1' : 'text-secondary hover:text-primary hover:bg-surface-container-low px-2.5 py-1 rounded-lg' }}"
                        {{ $active ? 'aria-current=page' : '' }}>
                         {{ __t('nav.products') }}
                     </a>
@@ -101,20 +101,20 @@
                         $active = request()->is('category/'.$cat->slug) || request()->fullUrlIs('*category/'.$cat->slug.'*');
                     @endphp
                     <a href="{{ route('shop.category', ['slug' => $cat->slug]) }}"
-                       class="px-3 py-1.5 text-sm rounded-full transition {{ $active ? 'bg-primary text-white font-semibold' : 'text-secondary hover:bg-surface-container-low hover:text-primary font-medium' }}"
+                       class="font-body-md text-sm font-bold transition-all {{ $active ? 'text-primary border-b-2 border-primary pb-1' : 'text-secondary hover:text-primary hover:bg-surface-container-low px-2.5 py-1 rounded-lg' }}"
                        {{ $active ? 'aria-current=page' : '' }}>
                         {{ $cat->name }}
                     </a>
                 @elseif(($item['type'] ?? '') === 'page' && !empty($item['data']))
                     @php $active = request()->is('page/'.$item['data']->slug); @endphp
                     <a href="{{ route('page.show', ['slug' => $item['data']->slug]) }}"
-                       class="px-3 py-1.5 text-sm rounded-full transition {{ $active ? 'bg-primary text-white font-semibold' : 'text-secondary hover:bg-surface-container-low hover:text-primary font-medium' }}">
+                       class="font-body-md text-sm font-bold transition-all {{ $active ? 'text-primary border-b-2 border-primary pb-1' : 'text-secondary hover:text-primary hover:bg-surface-container-low px-2.5 py-1 rounded-lg' }}">
                         {{ $item['data']->title }}
                     </a>
                 @elseif(($item['type'] ?? '') === 'contact' && site('nav_show_contact', '1') === '1')
                     @php $active = request()->is('page/contact') || request()->is('contact'); @endphp
                     <a href="{{ route('page.show', ['slug' => 'contact']) }}"
-                       class="px-3 py-1.5 text-sm rounded-full transition {{ $active ? 'bg-primary text-white font-semibold' : 'text-secondary hover:bg-surface-container-low hover:text-primary font-medium' }}">
+                       class="font-body-md text-sm font-bold transition-all {{ $active ? 'text-primary border-b-2 border-primary pb-1' : 'text-secondary hover:text-primary hover:bg-surface-container-low px-2.5 py-1 rounded-lg' }}">
                         {{ __t('nav.contact') }}
                     </a>
                 @endif
@@ -181,17 +181,48 @@
                 @endif
             </a>
 
-            {{-- Cart --}}
-            <a href="{{ route('cart.index') }}"
-               class="relative min-h-[44px] min-w-[44px] flex items-center justify-center rounded-full hover:bg-gray-100"
-               aria-label="{{ __t('nav.cart') }}">
-                <span class="material-symbols-outlined text-primary">shopping_cart</span>
-                @if(($cartCount ?? 0) > 0)
-                    <span class="absolute top-1 end-1 bg-accent-500 text-white text-[10px] min-w-[18px] h-[18px] px-1 rounded-full flex items-center justify-center font-bold shadow-md">
-                        {{ $cartCount }}
-                    </span>
-                @endif
-            </a>
+
+            {{-- Language Switcher --}}
+            <div class="relative" @click.outside="langMenu = false">
+                <button type="button" @click="langMenu = !langMenu"
+                        class="min-h-[44px] min-w-[44px] flex items-center justify-center rounded-full hover:bg-gray-100 gap-1 px-2 transition-colors"
+                        aria-label="{{ __t('nav.language', [], 'اللغة') }}" aria-haspopup="true" :aria-expanded="langMenu">
+                    <span class="material-symbols-outlined text-primary">translate</span>
+                    <span class="hidden sm:inline text-xs font-semibold text-on-surface uppercase">{{ current_locale() }}</span>
+                </button>
+                <div x-show="langMenu" x-transition x-cloak
+                     class="absolute end-0 mt-2 w-44 bg-white rounded-2xl shadow-xl border border-outline-variant py-2 z-50">
+                    @php
+                        $supportedLangs = [
+                            'ar' => ['name' => 'العربية', 'flag' => '🇩🇿'],
+                            'en' => ['name' => 'English', 'flag' => '🇬🇧'],
+                            'fr' => ['name' => 'Français', 'flag' => '🇫🇷'],
+                        ];
+                        $currentLoc = current_locale();
+                    @endphp
+                    @foreach($supportedLangs as $code => $lang)
+                        @php
+                            // Build URL by swapping locale prefix
+                            $currentPath = request()->path();
+                            // Remove current locale prefix if present
+                            $pathWithoutLocale = preg_replace('#^(' . implode('|', array_keys($supportedLangs)) . ')(/|$)#', '', $currentPath);
+                            $switchUrl = url($code . '/' . ltrim($pathWithoutLocale, '/'));
+                        @endphp
+                        <a href="{{ $switchUrl }}"
+                           class="flex items-center gap-3 px-4 py-2.5 text-sm transition-colors
+                                  {{ $code === $currentLoc
+                                      ? 'bg-primary/10 text-primary font-semibold'
+                                      : 'text-gray-700 hover:bg-gray-50' }}"
+                           @if($code === $currentLoc) aria-current="true" @endif>
+                            <span class="text-lg">{{ $lang['flag'] }}</span>
+                            <span>{{ $lang['name'] }}</span>
+                            @if($code === $currentLoc)
+                                <span class="material-symbols-outlined text-primary text-sm ms-auto">check</span>
+                            @endif
+                        </a>
+                    @endforeach
+                </div>
+            </div>
 
             {{-- User menu / Login --}}
             @auth
@@ -337,9 +368,6 @@
                 @endauth
                 <a href="{{ route('wishlist.index') }}" class="flex items-center gap-3 px-5 py-3 text-sm rounded-lg min-h-[44px] text-on-surface hover:bg-surface-container-low">
                     <span class="material-symbols-outlined text-lg">favorite</span> {{ __t('nav.wishlist') }}
-                </a>
-                <a href="{{ route('cart.index') }}" class="flex items-center gap-3 px-5 py-3 text-sm rounded-lg min-h-[44px] text-on-surface hover:bg-surface-container-low">
-                    <span class="material-symbols-outlined text-lg">shopping_cart</span> {{ __t('nav.cart') }}
                 </a>
             </div>
         </div>

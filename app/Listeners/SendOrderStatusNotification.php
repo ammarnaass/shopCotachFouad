@@ -3,12 +3,12 @@
 namespace App\Listeners;
 
 use App\Events\OrderStatusChanged;
-use App\Models\Notification;
-use App\Models\User;
+use App\Models\Content\Notification;
+use App\Models\User\User;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Queue\InteractsWithQueue;
-use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Mail;
 
 class SendOrderStatusNotification implements ShouldQueue
 {
@@ -55,19 +55,20 @@ class SendOrderStatusNotification implements ShouldQueue
             $email = $order->user?->email ?? $order->guest_email;
             $name = $order->user?->name ?? $order->shippingAddress?->name ?? 'عميلنا العزيز';
 
-            if (!$email) {
+            if (! $email) {
                 Log::warning('No email found for order', ['order_id' => $order->id]);
+
                 return;
             }
 
             $subject = "تحديث حالة طلبك #{$order->order_number}";
-            
+
             // Simple email content
             $content = $this->buildEmailContent($name, $order, $status, $message);
 
             Mail::raw($content, function ($mail) use ($email, $name, $subject) {
                 $mail->to($email, $name)
-                     ->subject($subject);
+                    ->subject($subject);
             });
 
             Log::info('Order status email sent', ['order_id' => $order->id, 'email' => $email]);

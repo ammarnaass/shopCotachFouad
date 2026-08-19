@@ -1,0 +1,74 @@
+# Docker
+Dockerfile
+docker-compose.yml
+.dockerignore
+
+# Git
+.git
+.gitignore
+.gitattributes
+
+# IDE
+.vscode
+.idea
+.zed
+.nova
+.cursor
+.codex
+
+# Node
+node_modules
+npm-debug.log
+
+# Laravel
+storage/framework/views/*
+storage/logs/*
+storage/app/*
+!storage/app/public/
+public/hot
+public/build
+public/fonts-manifest.dev.json
+bootstrap/cache/*.php
+
+# Environment
+.env
+.env.backup
+.env.production
+.env.bak.sqlite
+
+# Documentation
+*.md
+LICENSE
+MYSQL_SETUP.md
+REDIS_SETUP.md
+SETUP.md
+TAILWIND_DESIGN.md
+
+# Test files
+test_*.php
+test_*.py
+test_*.sh
+phpunit.xml
+.phpunit.result.cache
+.phpunit.cache
+
+# Other
+*.log
+.DS_Store
+Thumbs.db
+_ide_helper.php
+Homestead.json
+Homestead.yaml
+stitch_/
+uiux/
+_1/
+_2/
+_3/
+_4/
+_5/
+_6/
+khaled_store_admin/
+category_listing_with_filters/
+admin_translations_blades.php
+install-mysql.sh
+.npmrc

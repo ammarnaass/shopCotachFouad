@@ -2,17 +2,17 @@
 
 namespace Database\Seeders;
 
-use App\Models\Category;
-use App\Models\Coupon;
-use App\Models\Permission;
-use App\Models\Product;
-use App\Models\ProductImage;
-use App\Models\ProductOption;
-use App\Models\ProductOptionValue;
-use App\Models\Role;
-use App\Models\ShippingCompany;
-use App\Models\ShippingZone;
-use App\Models\User;
+use App\Models\Catalog\Category;
+use App\Models\Catalog\Coupon;
+use App\Models\User\Permission;
+use App\Models\Catalog\Product;
+use App\Models\Catalog\ProductImage;
+use App\Models\Catalog\ProductOption;
+use App\Models\Catalog\ProductOptionValue;
+use App\Models\User\Role;
+use App\Models\Shipping\ShippingCompany;
+use App\Models\Shipping\ShippingZone;
+use App\Models\User\User;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
@@ -41,6 +41,9 @@ class DatabaseSeeder extends Seeder
 
         $this->command->info('Seeding pages...');
         $this->call(PageSeeder::class);
+
+        $this->command->info('Seeding sliders...');
+        $this->call(SliderSeeder::class);
 
         $this->command->info('Seeding products...');
         $this->seedProducts();
@@ -163,22 +166,22 @@ class DatabaseSeeder extends Seeder
     {
         $zones = [
             [
-                'name' => 'الخرطوم (السودان)',
+                'name' => 'الجزائر - العاصمة',
                 'regions' => ['*'],
-                'countries' => ['SD'],
-                'cities' => ['الخرطوم', 'بحري', 'ام درمان'],
-                'cost' => 25,
-                'express_cost' => 40,
-                'free_threshold' => 200,
+                'countries' => ['DZ'],
+                'cities' => ['الجزائر', 'البليدة', 'بومرداس', 'تيزي وزو', 'البويرة', 'المدية', 'تيبازة'],
+                'cost' => 400,
+                'express_cost' => 700,
+                'free_threshold' => 5000,
             ],
             [
-                'name' => 'باقي مدن السودان',
+                'name' => ' الجزائري - باقي الولايات',
                 'regions' => ['*'],
-                'countries' => ['SD'],
+                'countries' => ['DZ'],
                 'cities' => ['*'],
-                'cost' => 35,
-                'express_cost' => 55,
-                'free_threshold' => 300,
+                'cost' => 600,
+                'express_cost' => 950,
+                'free_threshold' => 7000,
             ],
         ];
 
@@ -188,12 +191,8 @@ class DatabaseSeeder extends Seeder
 
         // Shipping companies
         $companies = [
-            ['aramex', 'أرامكس', 'https://www.aramex.com/track?tracknumber={TRACKING}'],
-            ['smsa', 'سمسا', 'https://www.smsaexpress.com/trackingdetails?tracknumber={TRACKING}'],
-            ['yalidin', 'ياليدين', 'https://www.yalidin.com/tracking?code={TRACKING}'],
             ['noest', 'نوست إكسبرس', 'https://www.noest-dz.com/tracking/{TRACKING}'],
-            ['sudan_post', 'البريد السوداني', 'https://sudapost.sd/track/{TRACKING}'],
-            ['local_courier', 'شحن محلي', 'https://track.local/{TRACKING}'],
+            ['maystro', 'ميسترو ديليفري', 'https://maystro.com/track/{TRACKING}'],
         ];
 
         foreach ($companies as [$slug, $name, $url]) {
@@ -210,10 +209,10 @@ class DatabaseSeeder extends Seeder
     private function seedCoupons(): void
     {
         $coupons = [
-            ['WELCOME10', 'percent', 10, 50, null, 100, 'كوبون ترحيب - خصم 10%'],
-            ['SAVE20', 'fixed', 20, 100, null, 500, 'خصم ثابت 20 ج.س'],
-            ['SUMMER25', 'percent', 25, 200, 100, 50, 'عرض الصيف - 25%'],
-            ['FREESHIP', 'fixed', 25, 200, null, null, 'شحن مجاني يعادل 25 ج.س'],
+            ['WELCOME10', 'percent', 10, 500, null, 100, 'كوبون ترحيب - خصم 10%'],
+            ['SAVE20', 'fixed', 200, 1000, null, 500, 'خصم ثابت 200 د.ج'],
+            ['SUMMER25', 'percent', 25, 2000, 1000, 50, 'عرض الصيف - 25%'],
+            ['FREESHIP', 'fixed', 500, 2000, null, null, 'شحن مجاني يعادل 500 د.ج'],
         ];
 
         foreach ($coupons as [$code, $type, $value, $minOrder, $maxDiscount, $limit, $desc]) {

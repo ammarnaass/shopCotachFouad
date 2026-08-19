@@ -2,7 +2,8 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\ShippingAddress;
+use App\Http\Requests\Web\AccountPasswordRequest;
+use App\Models\Shipping\ShippingAddress;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -16,6 +17,7 @@ class AccountController extends Controller
     {
         $user = Auth::user()->load('addresses', 'orders', 'roles');
         $countries = config('ecommerce.countries', []);
+
         return view('frontend.account.index', compact('user', 'countries'));
     }
 
@@ -38,29 +40,17 @@ class AccountController extends Controller
 
         $countries = config('ecommerce.countries', []);
         $dial = $countries[$data['country_code']]['dial_code'] ?? '';
-        $data['phone'] = str_starts_with($data['phone'], '+') ? $data['phone'] : ($dial . $data['phone']);
+        $data['phone'] = str_starts_with($data['phone'], '+') ? $data['phone'] : ($dial.$data['phone']);
 
         $user->update($data);
 
         return back()->with('success', 'تم تحديث البيانات الشخصية بنجاح');
     }
 
-    public function updatePassword(Request $request): RedirectResponse
+    public function updatePassword(AccountPasswordRequest $request): RedirectResponse
     {
-        $data = $request->validate([
-            'current_password' => 'required|string',
-            'password' => 'required|string|min:6|confirmed',
-        ], [], [
-            'current_password' => 'كلمة المرور الحالية',
-            'password' => 'كلمة المرور الجديدة',
-        ]);
-
         $user = Auth::user();
-        if (!Hash::check($data['current_password'], $user->password)) {
-            return back()->withErrors(['current_password' => 'كلمة المرور الحالية غير صحيحة']);
-        }
-
-        $user->update(['password' => Hash::make($data['password'])]);
+        $user->update(['password' => Hash::make($request->password)]);
 
         return back()->with('success', 'تم تغيير كلمة المرور بنجاح');
     }
@@ -81,7 +71,7 @@ class AccountController extends Controller
 
         $data['user_id'] = Auth::id();
 
-        if (!empty($data['is_default'])) {
+        if (! empty($data['is_default'])) {
             ShippingAddress::where('user_id', $data['user_id'])->update(['is_default' => false]);
         }
 
@@ -108,6 +98,7 @@ class AccountController extends Controller
             abort(403);
         }
         $address->delete();
+
         return back()->with('success', 'تم حذف العنوان');
     }
 }

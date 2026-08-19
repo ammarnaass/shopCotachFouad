@@ -1,6 +1,20 @@
+@php
+    $appTheme = site('theme', site('site_theme', 'light'));
+    $themeClass = match($appTheme) {
+        'colorful' => 'theme-colorful',
+        'minimal' => 'theme-minimal',
+        default => '',
+    };
+@endphp
 <!DOCTYPE html>
-<html lang="{{ current_locale() }}" dir="{{ is_rtl() ? 'rtl' : 'ltr' }}" class="scroll-smooth">
+<html lang="{{ current_locale() }}" dir="{{ is_rtl() ? 'rtl' : 'ltr' }}" class="scroll-smooth {{ $themeClass }}" data-theme="{{ $appTheme }}">
 <head>
+    <script>
+        try {
+            localStorage.removeItem('theme');
+            localStorage.removeItem('amar:theme');
+        } catch(e) {}
+    </script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
@@ -20,40 +34,100 @@
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 
     {{-- Dynamic colors from settings (override Tailwind defaults) --}}
+    {{-- This is THE single source of truth for site colors — Admin → Customize → Theme --}}
     <style>
         :root {
-            --color-primary: {{ $siteSettings['primary_color'] ?? '#2563eb' }};
-            --color-accent:  {{ $siteSettings['accent_color'] ?? '#f59e0b' }};
+            /* ── Core brand colors from Admin Panel (لوحة الإدارة ← التخصيص ← المظهر) ── */
+            --color-primary:           {{ $siteSettings['primary_color'] ?? '#2563eb' }};
+            --color-accent:            {{ $siteSettings['accent_color']  ?? '#f59e0b' }};
+
+            /* ── Primary scale (auto-derived) ── */
+            --color-primary-container: color-mix(in srgb, var(--color-primary) 25%, white);
+            --color-on-primary:        #ffffff;
+            --color-on-primary-container: color-mix(in srgb, var(--color-primary) 85%, black);
+            --color-primary-fixed:     color-mix(in srgb, var(--color-primary) 35%, white);
+            --color-primary-fixed-dim: color-mix(in srgb, var(--color-primary) 55%, white);
+            --color-inverse-primary:   color-mix(in srgb, var(--color-primary) 70%, white);
+            --color-surface-tint:      var(--color-primary);
+
+            /* ── Accent / tertiary scale (auto-derived) ── */
+            --color-tertiary:           {{ $siteSettings['accent_color'] ?? '#f59e0b' }};
+            --color-tertiary-container: color-mix(in srgb, var(--color-accent) 25%, white);
+            --color-on-tertiary:        #ffffff;
+            --color-on-tertiary-container: color-mix(in srgb, var(--color-accent) 85%, black);
         }
-        .bg-brand-500 { background-color: var(--color-primary) !important; }
-        .bg-brand-600 { background-color: var(--color-primary) !important; }
-        .bg-brand-700 { background-color: var(--color-primary) !important; filter: brightness(0.9); }
-        .text-brand-500, .text-brand-600, .text-brand-700 { color: var(--color-primary) !important; }
-        .border-brand-500, .border-brand-600 { border-color: var(--color-primary) !important; }
-        .from-brand-500 { --tw-gradient-from: var(--color-primary) !important; }
-        .to-brand-500   { --tw-gradient-to:   var(--color-primary) !important; }
-        .from-brand-600 { --tw-gradient-from: var(--color-primary) !important; }
-        .to-brand-600   { --tw-gradient-to:   var(--color-primary) !important; }
-        .from-brand-700 { --tw-gradient-from: var(--color-primary) !important; }
-        .to-brand-700   { --tw-gradient-to:   var(--color-primary) !important; }
-        .bg-accent-500 { background-color: var(--color-accent) !important; }
-        .text-accent-500, .text-accent-600 { color: var(--color-accent) !important; }
+
+        /* ── Utility overrides — Tailwind bg-primary / text-primary / border-primary ── */
+        .bg-primary          { background-color: var(--color-primary) !important; }
+        .text-primary        { color: var(--color-primary) !important; }
+        .border-primary      { border-color: var(--color-primary) !important; }
+        .ring-primary        { --tw-ring-color: var(--color-primary) !important; }
+        .bg-primary-container   { background-color: var(--color-primary-container) !important; }
+        .text-on-primary        { color: var(--color-on-primary) !important; }
+        .from-primary        { --tw-gradient-from: var(--color-primary) !important; }
+        .to-primary          { --tw-gradient-to:   var(--color-primary) !important; }
+        .via-primary         { --tw-gradient-via:  var(--color-primary) !important; }
+        .bg-primary\/5       { background-color: color-mix(in srgb, var(--color-primary) 5%, transparent) !important; }
+        .bg-primary\/10      { background-color: color-mix(in srgb, var(--color-primary) 10%, white) !important; }
+        .bg-primary\/20      { background-color: color-mix(in srgb, var(--color-primary) 20%, white) !important; }
+        .bg-primary-fixed\/30 { background-color: color-mix(in srgb, var(--color-primary) 30%, white) !important; }
+
+        /* ── Hover variants ── */
+        .hover\:bg-primary:hover     { background-color: var(--color-primary) !important; }
+        .hover\:text-primary:hover   { color: var(--color-primary) !important; }
+        .hover\:border-primary:hover { border-color: var(--color-primary) !important; }
+        .focus\:ring-primary:focus   { --tw-ring-color: var(--color-primary) !important; }
+
+        /* ── Brand utilities (backward compat aliases) ── */
+        .bg-brand-50   { background-color: color-mix(in srgb, var(--color-primary) 10%, white) !important; }
+        .bg-brand-100  { background-color: color-mix(in srgb, var(--color-primary) 18%, white) !important; }
+        .bg-brand-200  { background-color: color-mix(in srgb, var(--color-primary) 30%, white) !important; }
+        .bg-brand-500,
+        .bg-brand-600  { background-color: var(--color-primary) !important; }
+        .bg-brand-700  { background-color: var(--color-primary) !important; filter: brightness(0.88); }
+        .text-brand-400                 { color: color-mix(in srgb, var(--color-primary) 75%, white) !important; }
+        .text-brand-500,
+        .text-brand-600,
+        .text-brand-700                 { color: var(--color-primary) !important; }
+        .border-brand-200               { border-color: color-mix(in srgb, var(--color-primary) 30%, white) !important; }
+        .border-brand-500,
+        .border-brand-600               { border-color: var(--color-primary) !important; }
+        .from-brand-50   { --tw-gradient-from: color-mix(in srgb, var(--color-primary) 10%, white) !important; }
+        .to-brand-50     { --tw-gradient-to:   color-mix(in srgb, var(--color-primary)  5%, white) !important; }
+        .from-brand-100  { --tw-gradient-from: color-mix(in srgb, var(--color-primary) 18%, white) !important; }
+        .to-brand-100    { --tw-gradient-to:   color-mix(in srgb, var(--color-primary) 10%, white) !important; }
+        .from-brand-500,
+        .from-brand-600,
+        .from-brand-700  { --tw-gradient-from: var(--color-primary) !important; }
+        .to-brand-500,
+        .to-brand-600,
+        .to-brand-700    { --tw-gradient-to:   var(--color-primary) !important; }
         .hover\:bg-brand-600:hover { background-color: var(--color-primary) !important; }
+
+        /* ── Accent utilities ── */
+        .bg-accent-50   { background-color: color-mix(in srgb, var(--color-accent) 10%, white) !important; }
+        .bg-accent-500  { background-color: var(--color-accent) !important; }
+        .text-accent-500,
+        .text-accent-600 { color: var(--color-accent) !important; }
+        .border-accent-500 { border-color: var(--color-accent) !important; }
+        .hover\:bg-accent-600:hover { background-color: var(--color-accent) !important; filter: brightness(0.9); }
     </style>
 
-    {{-- Material Symbols (Stitch design system) --}}
+    {{-- Material Symbols & Stitch Fonts (Sora + IBM Plex Sans Arabic + JetBrains Mono) --}}
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&display=swap">
-    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600;700&family=Noto+Sans+Arabic:wght@300;400;500;600;700&family=Barlow+Condensed:wght@600;700;800;900&family=Cairo:wght@500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700;800&family=IBM+Plex+Sans+Arabic:wght@300;400;500;600;700&family=JetBrains+Mono:wght@600&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     {{-- Font Awesome (for legacy category icons stored as fa-xxx) --}}
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" integrity="sha512-Avb2QiuDEEvB4bZJYdft2mNjVShBftLdPG8FJ0V7irTLQ8Uo0qcPxh4Plh7eecU/V7BUV/4hMa1cEQIFVQ==" crossorigin="anonymous" referrerpolicy="no-referrer" />
 
     <style>
         /* Inline critical CSS (loaded before Vite) */
-        body { font-family: 'IBM Plex Sans Arabic', 'Noto Sans Arabic', 'Inter', system-ui, sans-serif; }
+        body { font-family: 'IBM Plex Sans Arabic', 'Inter', system-ui, sans-serif; }
+        h1, h2, h3, h4, h5, h6, .font-sora { font-family: 'Sora', 'IBM Plex Sans Arabic', sans-serif; }
+        .font-jetbrains { font-family: 'JetBrains Mono', monospace; }
         html[dir="ltr"] body { font-family: 'Inter', system-ui, sans-serif; }
         [x-cloak] { display: none !important; }
 
-        /* Page loading screen */
+        /* Page loader */
         .page-loader {
             position: fixed;
             inset: 0;
@@ -72,7 +146,7 @@
             width: 40px;
             height: 40px;
             border: 4px solid #e1e2ed;
-            border-top-color: #004ac6;
+            border-top-color: var(--color-primary, #004ac6);
             border-radius: 50%;
             animation: spin 0.8s linear infinite;
         }

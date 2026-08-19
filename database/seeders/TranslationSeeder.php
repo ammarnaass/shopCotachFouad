@@ -2,8 +2,8 @@
 
 namespace Database\Seeders;
 
-use App\Models\Language;
-use App\Models\Translation;
+use App\Models\Settings\Language;
+use App\Models\Settings\Translation;
 use Illuminate\Database\Seeder;
 
 class TranslationSeeder extends Seeder

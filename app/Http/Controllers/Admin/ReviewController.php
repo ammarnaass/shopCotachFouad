@@ -3,7 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
-use App\Models\Review;
+use App\Models\Content\Review;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -39,12 +39,14 @@ class ReviewController extends Controller
             'status' => 'required|in:pending,approved,rejected',
         ]);
         $review->update($data);
+
         return back()->with('success', 'تم تحديث حالة التقييم');
     }
 
     public function destroy(Review $review): RedirectResponse
     {
         $review->delete();
+
         return back()->with('success', 'تم حذف التقييم');
     }
 }

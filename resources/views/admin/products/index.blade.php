@@ -1,4 +1,4 @@
-ï»¿@extends('admin.layout')
+@extends('admin.layout')
 
 @section('title', __t('admin.products.title'))
 
@@ -6,7 +6,7 @@
 
 @section('content')
 @php
-    use App\Models\Product;
+    use App\Models\Catalog\Product;
     $totalProducts = Product::count();
     $activeCount = Product::where('status', 'active')->count();
     $lowStockCount = Product::where('stock', '<', 10)->count();
@@ -112,7 +112,7 @@
                                     <span class="material-symbols-outlined text-sm text-warning align-text-bottom mr-1" style="font-variation-settings:'FILL' 1">star</span>
                                 @endif
                             </td>
-                            <td class="p-4 font-label-sm text-label-sm text-secondary font-mono">{{ $product->sku ?? 'â€”' }}</td>
+                            <td class="p-4 font-label-sm text-label-sm text-secondary font-mono">{{ $product->sku ?? '—' }}</td>
                             <td class="p-4 font-body-md text-body-md font-bold">
                                 @if($product->sale_price)
                                     <div>
@@ -132,7 +132,7 @@
                             </td>
                             <td class="p-4">
                                 <span class="bg-secondary-fixed text-on-secondary-fixed px-3 py-1 rounded-full text-[12px] font-bold">
-                                    {{ $product->category->name ?? 'â€”' }}
+                                    {{ $product->category->name ?? '—' }}
                                 </span>
                             </td>
                             <td class="p-4 text-center">

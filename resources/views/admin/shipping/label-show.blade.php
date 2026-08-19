@@ -22,6 +22,9 @@
                 <p class="text-sm opacity-80 mt-1">الحالة: {{ $label->getStatusLabel() }}</p>
             </div>
             <div class="flex gap-2">
+                <a href="{{ route('admin.shipping.label.pdf', $label) }}" class="bg-white/20 hover:bg-white/30 px-4 py-2 rounded-lg text-sm font-semibold backdrop-blur-sm">
+                    <i class="fas fa-file-pdf ml-1"></i> {{ __t('admin.shipping.download_label') }}
+                </a>
                 @if($label->status === 'pending')
                     <form action="{{ route('admin.shipping.label.updateStatus', $label) }}" method="POST">
                         @csrf

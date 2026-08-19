@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Order;
+use App\Models\Order\Order;
 use App\Services\OrderService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -39,6 +39,7 @@ class OrderController extends Controller
 
         try {
             $this->orderService->cancelOrder($order, $request->reason);
+
             return redirect()->back()->with('success', 'تم إلغاء الطلب');
         } catch (\Exception $e) {
             return redirect()->back()->with('error', $e->getMessage());

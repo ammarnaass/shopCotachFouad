@@ -2,10 +2,10 @@
 
 namespace App\Services;
 
-use App\Models\Product;
-use App\Models\ShippingMethod;
-use App\Models\ShippingOfficePickup;
-use App\Models\ShippingZone;
+use App\Models\Catalog\Product;
+use App\Models\Shipping\ShippingMethod;
+use App\Models\Shipping\ShippingOfficePickup;
+use App\Models\Shipping\ShippingZone;
 
 class DynamicShippingService
 {

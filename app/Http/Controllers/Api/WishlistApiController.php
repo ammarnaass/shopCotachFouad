@@ -3,7 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
-use App\Models\Wishlist;
+use App\Models\Cart\Wishlist;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 

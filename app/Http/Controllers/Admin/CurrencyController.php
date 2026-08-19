@@ -3,7 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
-use App\Models\Setting;
+use App\Models\Settings\Setting;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Artisan;
@@ -26,7 +26,7 @@ class CurrencyController extends Controller
         foreach ($supported as $code => $info) {
             $cur = $info['currency'] ?? null;
             $sym = $info['currency_symbol'] ?? null;
-            if ($cur && !isset($seen[$cur])) {
+            if ($cur && ! isset($seen[$cur])) {
                 $currencies[] = [
                     'code' => $cur,
                     'symbol' => $sym,
@@ -74,7 +74,7 @@ class CurrencyController extends Controller
         Artisan::call('cache:clear');
 
         return redirect()->route('admin.currencies.index')
-            ->with('success', 'تم تحديث إعدادات العملة بنجاح (' . $data['currency'] . ' ' . $data['currency_symbol'] . '). تم تحديث ملف .env ومسح الكاش.');
+            ->with('success', 'تم تحديث إعدادات العملة بنجاح ('.$data['currency'].' '.$data['currency_symbol'].'). تم تحديث ملف .env ومسح الكاش.');
     }
 
     public function updateRates(Request $request): RedirectResponse
@@ -97,7 +97,7 @@ class CurrencyController extends Controller
         Config::set('ecommerce.exchange_rates', $rates);
 
         return redirect()->route('admin.currencies.index')
-            ->with('success', 'تم تحديث أسعار الصرف بنجاح لـ ' . count($rates) . ' دولة.');
+            ->with('success', 'تم تحديث أسعار الصرف بنجاح لـ '.count($rates).' دولة.');
     }
 
     /**
@@ -106,7 +106,7 @@ class CurrencyController extends Controller
     private function updateEnv(array $values): void
     {
         $envPath = base_path('.env');
-        if (!File::exists($envPath)) {
+        if (! File::exists($envPath)) {
             return;
         }
 
@@ -114,7 +114,7 @@ class CurrencyController extends Controller
 
         foreach ($values as $key => $value) {
             // Escape any double quotes in the value
-            $escapedValue = '"' . str_replace('"', '\"', $value) . '"';
+            $escapedValue = '"'.str_replace('"', '\"', $value).'"';
 
             if (preg_match("/^{$key}=.*$/m", $env)) {
                 $env = preg_replace("/^{$key}=.*$/m", "{$key}={$escapedValue}", $env);

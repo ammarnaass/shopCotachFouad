@@ -104,7 +104,12 @@
                         <span class="material-symbols-outlined">mail</span>
                         {{ __t('page.contact_btn') }}
                     </a>
-                    <a href="https://wa.me/2490674784859" target="_blank" class="btn btn-lg bg-green-500 hover:bg-green-600 text-white shadow-lg">
+                    @php
+                        $ctaWa = preg_replace('/[^0-9]/', '', site('contact_whatsapp', site('social_whatsapp', '')));
+                        $ctaWa = ltrim($ctaWa, '0');
+                        if (strlen($ctaWa) < 12) $ctaWa = '213' . $ctaWa;
+                    @endphp
+                    <a href="https://wa.me/{{ $ctaWa }}" target="_blank" class="btn btn-lg bg-green-500 hover:bg-green-600 text-white shadow-lg">
                         <span class="material-symbols-outlined text-xl">whatsapp</span>
                         {{ __t('page.whatsapp_btn') }}
                     </a>

@@ -2,8 +2,8 @@
 
 namespace Database\Seeders;
 
-use App\Models\Category;
-use App\Models\Product;
+use App\Models\Catalog\Category;
+use App\Models\Catalog\Product;
 use Illuminate\Database\Seeder;
 
 class LocalizedContentSeeder extends Seeder

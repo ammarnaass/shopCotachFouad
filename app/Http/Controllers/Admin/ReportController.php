@@ -3,10 +3,8 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
-use App\Models\Order;
-use App\Models\Product;
-use App\Models\Category;
-use App\Models\User;
+use App\Models\Order\Order;
+use App\Models\User\User;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
 
@@ -75,6 +73,7 @@ class ReportController extends Controller
                 $countries = config('ecommerce.countries');
                 $info = $countries[$row->country_code] ?? null;
                 $row->country_name = $info['name'] ?? $row->country_code;
+
                 return $row;
             });
 

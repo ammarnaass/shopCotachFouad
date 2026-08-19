@@ -5,172 +5,99 @@
 
 @section('content')
 
-{{-- ========== HERO SLIDER ========== --}}
-@if($slides->count() > 0)
-<section x-data="carousel({{ $slides->count() }}, { autoplay: true, interval: 5000 })" @mouseenter="pause()" @mouseleave="resume()" class="relative overflow-hidden text-white">
-    @foreach($slides as $i => $slide)
-    <div x-show="active === {{ $i }}" x-transition:enter="transition ease-out duration-700" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100" x-transition:leave="transition ease-in duration-500" x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0" class="min-h-[280px] sm:min-h-[350px] md:min-h-[450px] lg:min-h-[520px] xl:aspect-[16/5] xl:max-h-[600px] flex items-center">
-        <div class="absolute inset-0">
-            @if($slide->image)
-                <img src="{{ $slide->image_url }}" alt="{{ $slide->title }}" class="w-full h-full object-cover">
-                <div class="absolute inset-0 bg-gradient-to-l from-black/70 via-black/50 to-black/30"></div>
-            @else
-                <div class="w-full h-full bg-gradient-to-bl from-brand-700 via-brand-600 to-brand-500"></div>
-            @endif
-        </div>
+@php
+    $sectionOrder = json_decode(site('home_section_order', '["hero","marquee","categories","featured","latest","banner_1","banner_2"]'), true);
+    if (!is_array($sectionOrder)) {
+        $sectionOrder = ["hero","marquee","categories","featured","latest","banner_1","banner_2"];
+    }
+@endphp
 
-        {{-- Decorative dots --}}
-        <div class="absolute inset-0 opacity-10">
-            <svg xmlns="http://www.w3.org/2000/svg" width="100%" height="100%"><defs><pattern id="dp-{{ $i }}" x="0" y="0" width="60" height="60" patternUnits="userSpaceOnUse"><circle cx="30" cy="30" r="1.5" fill="white"/></pattern></defs><rect width="100%" height="100%" fill="url(#dp-{{ $i }})"/></svg>
-        </div>
-        <div class="absolute top-10 right-10 w-64 h-64 bg-accent-500/15 rounded-full blur-3xl"></div>
-        <div class="absolute bottom-10 left-10 w-80 h-80 bg-brand-400/20 rounded-full blur-3xl"></div>
+@foreach($sectionOrder as $section)
 
-        <div class="container-app relative z-10 py-16 md:py-24 lg:py-28 w-full">
-            <div class="max-w-2xl">
-                @if($slide->badge)
-                    <span class="inline-flex items-center gap-2 bg-accent-500/90 backdrop-blur-md px-5 py-2 rounded-full text-sm font-bold mb-5 shadow-lg">
-                        <span class="material-symbols-outlined text-base">auto_awesome</span>
-                        {{ $slide->badge }}
-                    </span>
-                @endif
+{{-- ========== HERO SECTION ========== --}}
+@if($section === 'hero' && site('show_hero', '1') === '1')
+    @include('frontend.partials.hero-slider', ['slides' => $slides])
+@endif
 
-                <h1 class="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-black leading-tight mb-5">
-                    {{ $slide->title }}
-                </h1>
-
-                @if($slide->subtitle)
-                    <p class="text-base sm:text-lg md:text-xl mb-8 text-white/85 leading-relaxed max-w-xl">
-                        {{ $slide->subtitle }}
-                    </p>
-                @endif
-
-                <div class="flex gap-3 flex-wrap">
-                    <a href="{{ $slide->link ?: route('shop.index') }}" class="btn-accent btn-lg shadow-accent">
-                        <span class="material-symbols-outlined">shopping_cart</span>
-                        {{ $slide->btn_text ?: __t('nav.shop_now') }}
-                    </a>
-                    @if($slides->count() === 1)
-                    <a href="{{ route('shop.index') }}?featured=1" class="btn btn-lg bg-white/15 backdrop-blur-md border border-white/30 text-white hover:bg-white/25">
-                        <span class="material-symbols-outlined">star</span>
-                        {{ __t('nav.featured') }}
-                    </a>
-                    @endif
+{{-- ========== MARQUEE FEATURES ========== --}}
+@if($section === 'marquee' && site('show_marquee', '1') === '1')
+<section class="py-10 border-y border-outline-variant/30 bg-surface">
+    <div class="container-app">
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
+            <div class="flex flex-col sm:flex-row items-center text-center sm:text-start p-4 md:p-5 bg-surface-container-lowest rounded-xl border border-outline-variant/30 hover:shadow-sm transition-all gap-3">
+                <div class="w-12 h-12 rounded-full bg-surface-container-low flex items-center justify-center text-primary shrink-0">
+                    <span class="material-symbols-outlined text-xl">local_shipping</span>
+                </div>
+                <div>
+                    <h3 class="font-sora font-bold text-sm text-on-surface">{{ __t('home.free_shipping') }}</h3>
+                    <p class="text-xs text-secondary mt-0.5">{{ __t('home.free_shipping_desc', ['amount' => config('ecommerce.shipping.free_threshold', 500)]) }}</p>
                 </div>
             </div>
-        </div>
-    </div>
-    @endforeach
-
-    {{-- Navigation --}}
-    @if($slides->count() > 1)
-    <button @click="prev()" class="absolute left-3 md:left-6 top-1/2 -translate-y-1/2 z-20 bg-white/15 backdrop-blur-sm hover:bg-white/30 text-white w-10 h-10 md:w-12 md:h-12 rounded-full flex items-center justify-center transition shadow-lg border border-white/20">
-        <span class="material-symbols-outlined">chevron_right</span>
-    </button>
-    <button @click="next()" class="absolute right-3 md:right-6 top-1/2 -translate-y-1/2 z-20 bg-white/15 backdrop-blur-sm hover:bg-white/30 text-white w-10 h-10 md:w-12 md:h-12 rounded-full flex items-center justify-center transition shadow-lg border border-white/20">
-        <span class="material-symbols-outlined">chevron_left</span>
-    </button>
-
-    {{-- Dots --}}
-    <div class="absolute bottom-5 left-1/2 -translate-x-1/2 z-20 flex gap-2">
-        @foreach($slides as $i => $slide)
-        <button @click="goTo({{ $i }})" :class="active === {{ $i }} ? 'bg-white w-8 h-3' : 'bg-white/40 w-3 h-3'" class="rounded-full transition-all duration-300"></button>
-        @endforeach
-    </div>
-    @endif
-</section>
-@else
-{{-- Fallback static hero when no slides exist --}}
-<section class="relative overflow-hidden text-white bg-gradient-to-bl from-brand-700 via-brand-600 to-brand-500 min-h-[280px] sm:min-h-[350px] md:min-h-[450px] lg:min-h-[520px] flex items-center">
-    <div class="absolute inset-0 opacity-10">
-        <svg xmlns="http://www.w3.org/2000/svg" width="100%" height="100%"><defs><pattern id="hero-pattern-fb" x="0" y="0" width="60" height="60" patternUnits="userSpaceOnUse"><circle cx="30" cy="30" r="2" fill="white"/></pattern></defs><rect width="100%" height="100%" fill="url(#hero-pattern-fb)"/></svg>
-    </div>
-    <div class="absolute top-10 right-10 w-64 h-64 bg-accent-500/15 rounded-full blur-3xl"></div>
-    <div class="absolute bottom-10 left-10 w-80 h-80 bg-brand-400/20 rounded-full blur-3xl"></div>
-    <div class="container-app relative z-10 py-16 md:py-24 w-full">
-        <div class="max-w-2xl text-center mx-auto">
-            <h1 class="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-black leading-tight mb-5">{{ site('hero_title', __t('home.hero_title')) }}</h1>
-            <p class="text-base sm:text-lg md:text-xl mb-8 text-white/85 leading-relaxed">{{ site('hero_subtitle', __t('home.hero_subtitle')) }}</p>
-            <a href="{{ route('shop.index') }}" class="btn-accent btn-lg shadow-accent inline-flex">
-                <span class="material-symbols-outlined">shopping_cart</span>
-                {{ __t('nav.shop_now') }}
-            </a>
+            <div class="flex flex-col sm:flex-row items-center text-center sm:text-start p-4 md:p-5 bg-surface-container-lowest rounded-xl border border-outline-variant/30 hover:shadow-sm transition-all gap-3">
+                <div class="w-12 h-12 rounded-full bg-surface-container-low flex items-center justify-center text-primary shrink-0">
+                    <span class="material-symbols-outlined text-xl">payments</span>
+                </div>
+                <div>
+                    <h3 class="font-sora font-bold text-sm text-on-surface">{{ __t('home.cod') }}</h3>
+                    <p class="text-xs text-secondary mt-0.5">{{ __t('home.cod_desc') }}</p>
+                </div>
+            </div>
+            <div class="flex flex-col sm:flex-row items-center text-center sm:text-start p-4 md:p-5 bg-surface-container-lowest rounded-xl border border-outline-variant/30 hover:shadow-sm transition-all gap-3">
+                <div class="w-12 h-12 rounded-full bg-surface-container-low flex items-center justify-center text-primary shrink-0">
+                    <span class="material-symbols-outlined text-xl">headphones</span>
+                </div>
+                <div>
+                    <h3 class="font-sora font-bold text-sm text-on-surface">{{ __t('home.support') }}</h3>
+                    <p class="text-xs text-secondary mt-0.5">{{ __t('home.support_desc') }}</p>
+                </div>
+            </div>
+            <div class="flex flex-col sm:flex-row items-center text-center sm:text-start p-4 md:p-5 bg-surface-container-lowest rounded-xl border border-outline-variant/30 hover:shadow-sm transition-all gap-3">
+                <div class="w-12 h-12 rounded-full bg-surface-container-low flex items-center justify-center text-primary shrink-0">
+                    <span class="material-symbols-outlined text-xl">verified</span>
+                </div>
+                <div>
+                    <h3 class="font-sora font-bold text-sm text-on-surface">{{ __t('home.authentic') }}</h3>
+                    <p class="text-xs text-secondary mt-0.5">{{ __t('home.authentic_desc') }}</p>
+                </div>
+            </div>
         </div>
     </div>
 </section>
 @endif
 
-{{-- ========== MARQUEE FEATURES ========== --}}
-<section class="bg-white border-y border-gray-100">
-    <div class="container-app py-6">
-        <div class="grid grid-cols-2 md:grid-cols-4 gap-6">
-            <div class="flex items-center gap-3">
-                    <div class="w-12 h-12 rounded-xl bg-brand-50 flex items-center justify-center text-brand-600 flex-shrink-0">
-                        <span class="material-symbols-outlined text-lg">local_shipping</span>
-                    </div>
-                    <div>
-                        <p class="font-semibold text-sm">{{ __t('home.free_shipping') }}</p>
-                        <p class="text-xs text-gray-500">{{ __t('home.free_shipping_desc', ['amount' => config('ecommerce.shipping.free_threshold', 500)]) }}</p>
-                </div>
-            </div>
-            <div class="flex items-center gap-3">
-                <div class="w-12 h-12 rounded-xl bg-accent-50 flex items-center justify-center text-accent-600 flex-shrink-0">
-                    <span class="material-symbols-outlined text-lg">payments</span>
-                </div>
-                <div>
-                    <p class="font-semibold text-sm">{{ __t('home.cod') }}</p>
-                    <p class="text-xs text-gray-500">{{ __t('home.cod_desc') }}</p>
-                </div>
-            </div>
-            <div class="flex items-center gap-3">
-                <div class="w-12 h-12 rounded-xl bg-green-50 flex items-center justify-center text-green-600 flex-shrink-0">
-                    <span class="material-symbols-outlined text-lg">headphones</span>
-                </div>
-                <div>
-                    <p class="font-semibold text-sm">{{ __t('home.support') }}</p>
-                    <p class="text-xs text-gray-500">{{ __t('home.support_desc') }}</p>
-                </div>
-            </div>
-            <div class="flex items-center gap-3">
-                <div class="w-12 h-12 rounded-xl bg-amber-50 flex items-center justify-center text-amber-600 flex-shrink-0">
-                    <span class="material-symbols-outlined text-lg">workspace_premium</span>
-                </div>
-                <div>
-                    <p class="font-semibold text-sm">{{ __t('home.authentic') }}</p>
-                    <p class="text-xs text-gray-500">{{ __t('home.authentic_desc') }}</p>
-                </div>
-            </div>
-        </div>
-    </div>
-</section>
-
 {{-- ========== CATEGORIES ========== --}}
-@if($categories->count() > 0 && site('show_categories', '1') === '1')
-<section class="section bg-gray-50">
+@if($section === 'categories' && site('show_categories', '1') === '1' && $categories->count() > 0)
+<section class="section py-14 bg-surface">
     <div class="container-app">
-        <div class="text-center mb-10">
-            <span class="inline-block badge badge-primary mb-3">
-                <span class="material-symbols-outlined">grid_view</span> {{ __t('home.browse_categories') }}
-            </span>
-            <h2 class="heading-2 mb-2">{{ __t('home.all_categories') }}</h2>
-            <p class="text-gray-500">{{ __t('home.categories_count', ['count' => $categories->count()]) }}</p>
+        <div class="flex justify-between items-end mb-8 flex-wrap gap-4">
+            <div>
+                <span class="inline-flex items-center gap-1.5 bg-primary-container text-on-primary-container font-label-caps text-xs px-3 py-1 rounded-full font-bold mb-2">
+                    <span class="material-symbols-outlined text-sm">grid_view</span> {{ __t('home.browse_categories') }}
+                </span>
+                <h2 class="font-sora text-2xl sm:text-3xl font-extrabold text-on-surface">{{ __t('home.all_categories') }}</h2>
+            </div>
+            <a href="{{ route('shop.index') }}" class="font-sora text-sm font-bold text-primary hover:underline flex items-center gap-1">
+                {{ __t('shop.view_all', [], 'عرض الكل') }}
+                <span class="material-symbols-outlined text-sm">arrow_back</span>
+            </a>
         </div>
 
-        <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
+        <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 md:gap-6">
             @foreach($categories as $category)
                 <a href="{{ route('shop.category', ['slug' => $category->slug]) }}"
-                   class="group relative bg-white rounded-2xl p-5 text-center transition-all duration-300 hover:-translate-y-1 border border-gray-100 hover:border-brand-200 overflow-hidden">
-                    <div class="absolute inset-0 bg-gradient-to-br from-brand-50 to-accent-50 opacity-0 group-hover:opacity-100 transition-opacity"></div>
-                    <div class="relative z-10">
-                        <div class="w-16 h-16 mx-auto mb-3 rounded-2xl bg-gradient-to-br from-brand-100 to-brand-50 flex items-center justify-center group-hover:scale-110 transition-transform duration-300 overflow-hidden">
-                            @if($category->image)
-                                <img src="{{ asset('storage/' . $category->image) }}" alt="{{ $category->name }}" class="w-full h-full object-cover">
-                            @else
-                                @categoryIcon($category->icon ?? 'local_offer', 'text-2xl text-brand-600')
-                            @endif
+                   class="group relative block h-56 rounded-2xl overflow-hidden bg-surface-container border border-outline-variant/30 hover:shadow-xl transition-all duration-300">
+                    @if($category->image)
+                        <div class="absolute inset-0 bg-cover bg-center transition-transform duration-500 group-hover:scale-105"
+                             style="background-image: url('{{ asset('storage/' . $category->image) }}')"></div>
+                    @else
+                        <div class="absolute inset-0 bg-surface-container-high flex items-center justify-center">
+                            @categoryIcon($category->icon ?? 'fitness_center', 'text-4xl text-primary')
                         </div>
-                        <h3 class="font-semibold text-sm text-gray-800 group-hover:text-brand-700 transition-colors">{{ $category->name }}</h3>
-                        <p class="text-xs text-gray-400 mt-1">{{ __t('home.products_count', ['count' => $category->products_count ?? $category->products()->count()]) }}</p>
+                    @endif
+                    <div class="absolute inset-0 bg-gradient-to-t from-on-background/85 via-on-background/30 to-transparent"></div>
+                    <div class="absolute bottom-0 left-0 right-0 p-5">
+                        <h3 class="font-sora text-base font-bold text-on-primary mb-0.5 group-hover:text-primary-container transition-colors">{{ $category->name }}</h3>
+                        <p class="font-body-md text-xs text-surface-dim">{{ __t('home.products_count', ['count' => $category->products_count ?? $category->products()->count()]) }}</p>
                     </div>
                 </a>
             @endforeach
@@ -180,20 +107,20 @@
 @endif
 
 {{-- ========== FEATURED PRODUCTS ========== --}}
-@if($featuredProducts->count() > 0 && site('show_featured', '1') === '1')
-<section class="section">
+@if($section === 'featured' && site('show_featured', '1') === '1' && $featuredProducts->count() > 0)
+<section class="section py-14">
     <div class="container-app">
         <div class="flex items-end justify-between mb-8 flex-wrap gap-4">
             <div>
-                <span class="inline-block badge badge-accent mb-2">
-                    <span class="material-symbols-outlined">local_fire_department</span> {{ __t('home.most_requested') }}
+                <span class="inline-flex items-center gap-1 bg-tertiary text-on-tertiary font-label-caps text-xs px-3 py-1 rounded-full font-bold mb-2">
+                    <span class="material-symbols-outlined text-sm">local_fire_department</span> {{ __t('home.most_requested') }}
                 </span>
-                <h2 class="heading-2">{{ __t('home.featured_products') }}</h2>
-                <p class="text-gray-500 mt-1">{{ __t('home.featured_subtitle') }}</p>
+                <h2 class="font-sora text-2xl sm:text-3xl font-extrabold text-on-surface">{{ __t('home.featured_products') }}</h2>
+                <p class="text-secondary text-sm mt-1">{{ __t('home.featured_subtitle') }}</p>
             </div>
-            <a href="{{ route('shop.index') }}?featured=1" class="btn btn-secondary">
+            <a href="{{ route('shop.index') }}?featured=1" class="font-sora text-sm font-bold text-primary hover:underline flex items-center gap-1">
                 {{ __t('shop.view_all') }}
-                <span class="material-symbols-outlined">arrow_back</span>
+                <span class="material-symbols-outlined text-sm">arrow_back</span>
             </a>
         </div>
 
@@ -207,20 +134,20 @@
 @endif
 
 {{-- ========== LATEST PRODUCTS ========== --}}
-@if($latestProducts->count() > 0 && site('show_latest', '1') === '1')
-<section class="section bg-white">
+@if($section === 'latest' && site('show_latest', '1') === '1' && $latestProducts->count() > 0)
+<section class="section py-14 bg-surface-container-low/40">
     <div class="container-app">
         <div class="flex items-end justify-between mb-8 flex-wrap gap-4">
             <div>
-                <span class="inline-block badge badge-info mb-2">
-                    <span class="material-symbols-outlined">bolt</span> {{ __t('home.just_arrived') }}
+                <span class="inline-flex items-center gap-1 bg-primary-container text-on-primary-container font-label-caps text-xs px-3 py-1 rounded-full font-bold mb-2">
+                    <span class="material-symbols-outlined text-sm">bolt</span> {{ __t('home.just_arrived') }}
                 </span>
-                <h2 class="heading-2">{{ __t('home.latest_products') }}</h2>
-                <p class="text-gray-500 mt-1">{{ __t('home.latest_subtitle') }}</p>
+                <h2 class="font-sora text-2xl sm:text-3xl font-extrabold text-on-surface">{{ __t('home.latest_products') }}</h2>
+                <p class="text-secondary text-sm mt-1">{{ __t('home.latest_subtitle') }}</p>
             </div>
-            <a href="{{ route('shop.index') }}" class="btn btn-secondary">
+            <a href="{{ route('shop.index') }}" class="font-sora text-sm font-bold text-primary hover:underline flex items-center gap-1">
                 {{ __t('nav.browse_all') }}
-                <span class="material-symbols-outlined">arrow_back</span>
+                <span class="material-symbols-outlined text-sm">arrow_back</span>
             </a>
         </div>
 
@@ -233,45 +160,41 @@
 </section>
 @endif
 
-{{-- ========== CTA BANNER ========== --}}
-<section class="section-sm">
+{{-- ========== CTA BANNER 1 ========== --}}
+@if($section === 'banner_1' && site('show_banner_1', '1') === '1')
+<section class="py-12">
     <div class="container-app">
-        <div class="relative bg-gradient-to-l from-brand-700 via-accent-500 to-amber-500 rounded-3xl p-8 md:p-14 text-white overflow-hidden shadow-2xl transition-all duration-300 hover:shadow-3xl">
-            <div class="absolute -top-24 -left-24 w-96 h-96 bg-white/10 rounded-full blur-xl"></div>
-            <div class="absolute -bottom-24 -right-24 w-[30rem] h-[30rem] bg-white/5 rounded-full blur-xl"></div>
-            <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-64 h-64 bg-white/5 rounded-full blur-3xl"></div>
-            <div class="absolute inset-0 bg-gradient-to-t from-black/10 to-transparent"></div>
+        <div class="relative bg-secondary text-on-primary rounded-3xl p-8 md:p-14 overflow-hidden shadow-xl border border-outline-variant/20">
+            <div class="absolute -top-24 -left-24 w-96 h-96 bg-primary-container/10 rounded-full blur-2xl"></div>
+            <div class="absolute -bottom-24 -right-24 w-[30rem] h-[30rem] bg-primary/20 rounded-full blur-3xl"></div>
 
             <div class="relative z-10 grid md:grid-cols-2 gap-10 items-center">
                 <div>
-                    <span class="inline-flex items-center gap-2 bg-white/20 backdrop-blur-md px-4 py-2 rounded-full text-sm font-bold mb-4 shadow-lg animate-pulse">
+                    <span class="inline-flex items-center gap-2 bg-primary-container text-on-primary-container px-4 py-1.5 rounded-full text-xs font-bold mb-4 shadow-sm">
                         <span class="material-symbols-outlined text-base">local_shipping</span> {{ __t('home.fast_shipping') }}
                     </span>
-                    <h2 class="text-4xl md:text-5xl font-extrabold mb-4 text-balance leading-tight">
+                    <h2 class="font-sora text-2xl sm:text-3xl md:text-4xl font-extrabold mb-4 leading-tight text-on-primary">
                         @if(site('banner_1_title'))
                             {{ site('banner_1_title') }}
                         @else
                             {{ __t('home.banner_1_title') }}
                         @endif
                     </h2>
-                    <p class="text-white/90 text-lg md:text-xl mb-8 text-pretty leading-relaxed">
+                    <p class="text-surface-dim text-base md:text-lg mb-8 leading-relaxed">
                         {{ site('banner_1_subtitle', __t('home.banner_1_subtitle')) }}
                     </p>
-                    <a href="{{ site('banner_1_link') ?: route('shop.index') }}" class="inline-flex items-center gap-2 px-8 py-4 bg-white text-brand-700 font-bold text-base rounded-2xl shadow-xl hover:shadow-2xl hover:scale-105 active:scale-95 transition-all duration-300">
-                        <span class="material-symbols-outlined">add_shopping_cart</span>
+                    <a href="{{ site('banner_1_link') ?: route('shop.index') }}" class="inline-flex items-center gap-2 px-8 py-4 bg-primary-container text-on-primary-container font-sora font-extrabold text-base rounded-2xl shadow-lg hover:bg-inverse-primary hover:scale-105 active:scale-95 transition-all duration-300">
+                        <span class="material-symbols-outlined">shopping_bag</span>
                         {{ __t('nav.shop_now') }}
                     </a>
                 </div>
                 <div class="hidden md:flex justify-center">
                     @if(site('banner_1_image'))
-                        <img src="{{ site('banner_1_image') }}" alt="" class="rounded-2xl shadow-2xl max-w-md w-full object-cover hover:scale-105 transition-transform duration-500">
+                        <img src="{{ site('banner_1_image') }}" alt="" loading="lazy" decoding="async" class="rounded-2xl shadow-2xl max-w-md w-full object-cover hover:scale-105 transition-transform duration-500">
                     @else
                         <div class="relative">
-                            <div class="w-48 h-48 rounded-full bg-white/10 backdrop-blur-sm flex items-center justify-center">
-                                <span class="material-symbols-outlined text-8xl text-white/60">local_shipping</span>
-                            </div>
-                            <div class="absolute -top-4 -right-4 w-16 h-16 bg-accent-400 rounded-full flex items-center justify-center shadow-lg animate-bounce-slow">
-                                <span class="material-symbols-outlined text-2xl text-white">local_fire_department</span>
+                            <div class="w-48 h-48 rounded-full bg-surface-container-high/20 flex items-center justify-center border border-outline-variant/30">
+                                <span class="material-symbols-outlined text-8xl text-primary-container">fitness_center</span>
                             </div>
                         </div>
                     @endif
@@ -280,24 +203,26 @@
         </div>
     </div>
 </section>
+@endif
 
-@if(site('banner_2_title') || site('banner_2_image'))
-<section class="section">
+{{-- ========== BANNER 2 ========== --}}
+@if($section === 'banner_2' && (site('banner_2_title') || site('banner_2_image')))
+<section class="py-12">
     <div class="container-app">
-        <div class="relative overflow-hidden rounded-3xl bg-gradient-to-l from-purple-600 to-pink-500 text-white p-8 md:p-12">
+        <div class="relative overflow-hidden rounded-3xl bg-surface-container-high border border-outline-variant/30 text-on-surface p-8 md:p-12">
             <div class="relative z-10 grid md:grid-cols-2 gap-8 items-center">
                 <div>
-                    <h2 class="text-3xl md:text-4xl font-extrabold mb-3">{{ site('banner_2_title') }}</h2>
-                    <p class="text-white/90 text-lg mb-6">{{ site('banner_2_subtitle') }}</p>
+                    <h2 class="font-sora text-3xl md:text-4xl font-extrabold mb-3 text-on-surface">{{ site('banner_2_title') }}</h2>
+                    <p class="text-secondary text-lg mb-6">{{ site('banner_2_subtitle') }}</p>
                     @if(site('banner_2_link'))
-                        <a href="{{ site('banner_2_link') }}" class="btn btn-lg bg-white text-purple-600 hover:bg-gray-100">
+                        <a href="{{ site('banner_2_link') }}" class="inline-flex items-center gap-2 px-6 py-3 bg-primary text-on-primary font-sora font-bold text-sm rounded-xl hover:bg-primary-container hover:text-on-primary-container transition-colors">
                             <span class="material-symbols-outlined">arrow_back</span> {{ __t('nav.discover_more') }}
                         </a>
                     @endif
                 </div>
                 @if(site('banner_2_image'))
                     <div class="hidden md:flex justify-center">
-                        <img src="{{ site('banner_2_image') }}" alt="" class="rounded-2xl shadow-2xl max-w-md w-full object-cover">
+                        <img src="{{ site('banner_2_image') }}" alt="" loading="lazy" decoding="async" class="rounded-2xl shadow-xl max-w-md w-full object-cover">
                     </div>
                 @endif
             </div>
@@ -306,16 +231,19 @@
 </section>
 @endif
 
+@endforeach
+
 @push('scripts')
-<script>
-    // Smooth scroll for anchor links
-    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
-        anchor.addEventListener('click', function (e) {
-            const target = document.querySelector(this.getAttribute('href'));
-            if (target) {
-                e.preventDefault();
-                target.scrollIntoView({ behavior: 'smooth' });
-            }
+<script defer>
+    document.addEventListener('DOMContentLoaded', function () {
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                const target = document.querySelector(this.getAttribute('href'));
+                if (target) {
+                    e.preventDefault();
+                    target.scrollIntoView({ behavior: 'smooth' });
+                }
+            });
         });
     });
 </script>

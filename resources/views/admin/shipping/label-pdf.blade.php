@@ -5,64 +5,88 @@
     <title>{{ __t('admin.shipping.label') }} - {{ $label->tracking_number }}</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: 'DejaVu Sans', Arial, sans-serif; font-size: 11px; color: #333; }
+        body { font-family: 'dejavusanscondensed', 'DejaVu Sans', sans-serif; font-size: 11px; color: #333; }
         .label { width: 100%; padding: 15px; border: 2px solid #333; }
-        .header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #333; padding-bottom: 10px; margin-bottom: 10px; }
+        .header-table { width: 100%; margin-bottom: 10px; }
+        .header-table td { border-bottom: 2px solid #333; padding-bottom: 10px; }
         .store-name { font-size: 18px; font-weight: bold; }
-        .tracking-box { background: #f0f0f0; padding: 8px 15px; border: 1px solid #999; text-align: center; }
-        .tracking-number { font-size: 16px; font-weight: bold; font-family: monospace; }
+        .tracking-box { display: inline-block; background: #f0f0f0; padding: 8px 15px; border: 1px solid #999; text-align: center; }
+        .tracking-box-label { font-size: 9px; color: #666; }
+        .tracking-number { font-size: 16px; font-weight: bold; font-family: 'dejavusansmono', monospace; }
+        .cols-table { width: 100%; margin-bottom: 10px; }
+        .cols-table td { width: 50%; vertical-align: top; padding: 0 6px; }
         .section { margin-bottom: 10px; }
         .section-title { font-weight: bold; font-size: 10px; color: #666; border-bottom: 1px solid #ddd; padding-bottom: 3px; margin-bottom: 5px; }
-        .row { display: flex; margin-bottom: 3px; }
+        .kv { width: 100%; border-collapse: collapse; }
+        .kv td { padding: 1px 0; vertical-align: top; }
         .label-col { width: 80px; color: #666; font-size: 10px; }
-        .value-col { flex: 1; font-weight: bold; }
-        .barcode { text-align: center; margin-top: 10px; padding-top: 10px; border-top: 1px dashed #999; }
-        .barcode-text { font-family: monospace; font-size: 14px; letter-spacing: 3px; }
-        .footer { text-align: center; font-size: 9px; color: #999; margin-top: 10px; border-top: 1px solid #ddd; padding-top: 5px; }
+        .value-col { font-weight: bold; }
+        .details-table { width: 100%; border-collapse: collapse; }
+        .details-table td { padding: 2px 4px; font-size: 10px; }
         .items-table { width: 100%; border-collapse: collapse; margin-top: 5px; }
         .items-table th, .items-table td { border: 1px solid #ddd; padding: 3px 6px; font-size: 10px; text-align: right; }
         .items-table th { background: #f5f5f5; }
+        .barcode { text-align: center; margin-top: 10px; padding-top: 10px; border-top: 1px dashed #999; }
+        .barcode-text { font-family: 'dejavusansmono', monospace; font-size: 12px; letter-spacing: 2px; margin-top: 3px; }
+        .footer { text-align: center; font-size: 9px; color: #999; margin-top: 10px; border-top: 1px solid #ddd; padding-top: 5px; }
     </style>
 </head>
 <body>
     <div class="label">
-        <div class="header">
-            <div class="store-name">{{ config('app.name') }}</div>
-            <div class="tracking-box">
-                <div style="font-size: 9px; color: #666;">{{ __t('admin.shipping.tracking_number') }}</div>
-                <div class="tracking-number">{{ $label->tracking_number }}</div>
-            </div>
-        </div>
+        <table class="header-table">
+            <tr>
+                <td style="text-align: right; vertical-align: middle;">
+                    <span class="store-name">{{ config('app.name') }}</span>
+                </td>
+                <td style="text-align: left; vertical-align: middle;">
+                    <span class="tracking-box">
+                        <span class="tracking-box-label">{{ __t('admin.shipping.tracking_number') }}</span><br>
+                        <span class="tracking-number">{{ $label->tracking_number }}</span>
+                    </span>
+                </td>
+            </tr>
+        </table>
 
-        <div style="display: flex; gap: 15px;">
-            <div class="section" style="flex: 1;">
-                <div class="section-title">{{ __t('admin.shipping.sender_info') }}</div>
-                <div class="row"><span class="label-col">{{ __t('admin.shipping.store') }}:</span><span class="value-col">{{ config('app.name') }}</span></div>
-                <div class="row"><span class="label-col">{{ __t('admin.shipping.phone') }}:</span><span class="value-col">{{ config('ecommerce.store.phone', '-') }}</span></div>
-                <div class="row"><span class="label-col">{{ __t('admin.shipping.address') }}:</span><span class="value-col">{{ config('ecommerce.store.address', '-') }}</span></div>
-            </div>
-
-            <div class="section" style="flex: 1;">
-                <div class="section-title">{{ __t('admin.shipping.recipient_info') }}</div>
-                @if($label->order?->shippingAddress)
-                    <div class="row"><span class="label-col">{{ __t('admin.shipping.name') }}:</span><span class="value-col">{{ $label->order->shippingAddress->name }}</span></div>
-                    <div class="row"><span class="label-col">{{ __t('admin.shipping.phone') }}:</span><span class="value-col">{{ $label->order->shippingAddress->phone }}</span></div>
-                    <div class="row"><span class="label-col">{{ __t('admin.shipping.address') }}:</span><span class="value-col">{{ $label->order->shippingAddress->address }}</span></div>
-                    <div class="row"><span class="label-col">{{ __t('admin.shipping.city') }}:</span><span class="value-col">{{ $label->order->shippingAddress->city }}</span></div>
-                @else
-                    <div class="row"><span class="value-col">-</span></div>
-                @endif
-            </div>
-        </div>
+        <table class="cols-table">
+            <tr>
+                <td>
+                    <div class="section">
+                        <div class="section-title">{{ __t('admin.shipping.sender_info') }}</div>
+                        <table class="kv">
+                            <tr><td class="label-col">{{ __t('admin.shipping.store') }}:</td><td class="value-col">{{ config('app.name') }}</td></tr>
+                            <tr><td class="label-col">{{ __t('admin.shipping.phone') }}:</td><td class="value-col" dir="ltr">{{ config('ecommerce.store.phone', '-') }}</td></tr>
+                            <tr><td class="label-col">{{ __t('admin.shipping.address') }}:</td><td class="value-col">{{ config('ecommerce.store.address', '-') }}</td></tr>
+                        </table>
+                    </div>
+                </td>
+                <td>
+                    <div class="section">
+                        <div class="section-title">{{ __t('admin.shipping.recipient_info') }}</div>
+                        @if($label->order?->shippingAddress)
+                            <table class="kv">
+                                <tr><td class="label-col">{{ __t('admin.shipping.name') }}:</td><td class="value-col">{{ $label->order->shippingAddress->name }}</td></tr>
+                                <tr><td class="label-col">{{ __t('admin.shipping.phone') }}:</td><td class="value-col" dir="ltr">{{ $label->order->shippingAddress->phone }}</td></tr>
+                                <tr><td class="label-col">{{ __t('admin.shipping.address') }}:</td><td class="value-col">{{ $label->order->shippingAddress->address }}</td></tr>
+                                <tr><td class="label-col">{{ __t('admin.shipping.city') }}:</td><td class="value-col">{{ $label->order->shippingAddress->city }}</td></tr>
+                            </table>
+                        @else
+                            <div class="value-col">-</div>
+                        @endif
+                    </div>
+                </td>
+            </tr>
+        </table>
 
         <div class="section">
             <div class="section-title">{{ __t('admin.shipping.shipment_details') }}</div>
-            <div style="display: flex; gap: 20px;">
-                <div class="row"><span class="label-col">{{ __t('admin.shipping.carrier') }}:</span><span class="value-col">{{ $label->carrier?->name ?? '-' }}</span></div>
-                <div class="row"><span class="label-col">{{ __t('admin.shipping.weight') }}:</span><span class="value-col">{{ $label->weight ? $label->weight . ' كغ' : '-' }}</span></div>
-                <div class="row"><span class="label-col">{{ __t('admin.shipping.cost') }}:</span><span class="value-col">{{ number_format($label->cost, 2) }} {{ currentCurrencySymbol() }}</span></div>
-                <div class="row"><span class="label-col">{{ __t('admin.shipping.order_number') }}:</span><span class="value-col">#{{ $label->order?->order_number ?? '-' }}</span></div>
-            </div>
+            <table class="details-table">
+                <tr>
+                    <td><span class="label-col">{{ __t('admin.shipping.carrier') }}:</span> <span class="value-col">{{ $label->carrier?->name ?? '-' }}</span></td>
+                    <td><span class="label-col">{{ __t('admin.shipping.weight') }}:</span> <span class="value-col">{{ $label->weight ? $label->weight . ' كغ' : '-' }}</span></td>
+                    <td><span class="label-col">{{ __t('admin.shipping.cost') }}:</span> <span class="value-col">{{ number_format($label->cost, 2) }} {{ currentCurrencySymbol() }}</span></td>
+                    <td><span class="label-col">{{ __t('admin.shipping.order_number') }}:</span> <span class="value-col" dir="ltr">#{{ $label->order?->order_number ?? '-' }}</span></td>
+                </tr>
+            </table>
         </div>
 
         @if($label->order?->items?->count())
@@ -89,8 +113,9 @@
             </div>
         @endif
 
-        <div class="barcode">
-            <div class="barcode-text">||||| {{ $label->tracking_number }} |||||</div>
+        <div class="barcode" dir="ltr">
+            <barcode code="{{ $label->tracking_number }}" type="C128" size="1" height="1" />
+            <div class="barcode-text">{{ $label->tracking_number }}</div>
         </div>
 
         <div class="footer">

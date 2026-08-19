@@ -3,7 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
-use App\Models\Category;
+use App\Models\Catalog\Category;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -13,12 +13,14 @@ class CategoryController extends Controller
     public function index(): View
     {
         $categories = Category::with('parent')->latest()->paginate(20);
+
         return view('admin.categories.index', compact('categories'));
     }
 
     public function create(): View
     {
         $parents = Category::whereNull('parent_id')->get();
+
         return view('admin.categories.create', compact('parents'));
     }
 
@@ -45,12 +47,14 @@ class CategoryController extends Controller
         }
 
         Category::create($data);
+
         return redirect()->route('admin.categories.index')->with('success', 'تم إضافة التصنيف');
     }
 
     public function edit(Category $category): View
     {
         $parents = Category::whereNull('parent_id')->where('id', '!=', $category->id)->get();
+
         return view('admin.categories.edit', compact('category', 'parents'));
     }
 
@@ -72,12 +76,14 @@ class CategoryController extends Controller
         }
 
         $category->update($data);
+
         return redirect()->route('admin.categories.index')->with('success', 'تم التحديث');
     }
 
     public function destroy(Category $category): RedirectResponse
     {
         $category->delete();
+
         return redirect()->route('admin.categories.index')->with('success', 'تم الحذف');
     }
 }

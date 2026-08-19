@@ -15,6 +15,7 @@ class CartController extends Controller
     public function index(): View
     {
         $cart = $this->cartService->getCart();
+
         return view('frontend.cart.index', compact('cart'));
     }
 
@@ -83,7 +84,7 @@ class CartController extends Controller
         $request->validate(['code' => 'required|string']);
 
         $coupon = $this->cartService->applyCoupon($request->code);
-        if (!$coupon) {
+        if (! $coupon) {
             return response()->json(['success' => false, 'message' => 'كود غير صالح'], 422);
         }
 
@@ -97,6 +98,7 @@ class CartController extends Controller
     public function removeCoupon(): JsonResponse
     {
         $this->cartService->removeCoupon();
+
         return response()->json([
             'success' => true,
             'cart' => $this->cartService->getSummary(),

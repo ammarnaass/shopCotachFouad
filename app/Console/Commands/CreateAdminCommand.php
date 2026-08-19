@@ -2,8 +2,8 @@
 
 namespace App\Console\Commands;
 
-use App\Models\Role;
-use App\Models\User;
+use App\Models\User\Role;
+use App\Models\User\User;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
@@ -32,7 +32,7 @@ class CreateAdminCommand extends Command
         $email = $this->option('email') ?: $this->ask('البريد الإلكتروني');
         $phone = $this->option('phone') ?: $this->ask('رقم الهاتف (مثال: 0912345678)');
         $password = $this->option('password') ?: $this->secret('كلمة المرور (6 أحرف على الأقل)');
-        $country = strtoupper($this->option('country') ?: $this->ask('رمز الدولة (SD, DZ, MA, TN, LY, EG)', 'SD'));
+        $country = strtoupper($this->option('country') ?: $this->ask('رمز الدولة (DZ)', 'DZ'));
         $roleName = $this->option('role') ?: $this->choice('الدور', ['admin', 'manager'], 0);
 
         // Validate
@@ -57,22 +57,24 @@ class CreateAdminCommand extends Command
         if ($validator->fails()) {
             $this->error('أخطاء في المدخلات:');
             foreach ($validator->errors()->all() as $error) {
-                $this->line('  - ' . $error);
+                $this->line('  - '.$error);
             }
+
             return self::FAILURE;
         }
 
         // Check role exists
         $role = Role::where('name', $roleName)->first();
-        if (!$role) {
+        if (! $role) {
             $this->error("الدور '{$roleName}' غير موجود. شغل: php artisan db:seed أولاً");
+
             return self::FAILURE;
         }
 
         // Add country dial code
         $countries = config('ecommerce.countries', []);
         $dial = $countries[$country]['dial_code'] ?? '';
-        $fullPhone = str_starts_with($phone, '+') ? $phone : ($dial . $phone);
+        $fullPhone = str_starts_with($phone, '+') ? $phone : ($dial.$phone);
 
         // Create user
         $user = User::create([
@@ -105,8 +107,8 @@ class CreateAdminCommand extends Command
 
         $this->newLine();
         $this->comment('يمكنك الآن تسجيل الدخول عبر:');
-        $this->line('  - لوحة الإدارة: ' . url('/admin'));
-        $this->line('  - البريد: ' . $email);
+        $this->line('  - لوحة الإدارة: '.url('/admin'));
+        $this->line('  - البريد: '.$email);
         $this->line('  - كلمة المرور: [التي أدخلتها]');
 
         return self::SUCCESS;

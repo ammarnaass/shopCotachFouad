@@ -2,8 +2,8 @@
 
 namespace Tests\Feature;
 
-use App\Models\Page;
-use App\Models\User;
+use App\Models\Content\Page;
+use App\Models\User\User;
 use Database\Seeders\PageSeeder;
 use Tests\TestCase;
 

@@ -214,4 +214,26 @@ Alpine.data('asyncButton', (callback) => ({
     },
 }));
 
+/* ----- Product Card (Add to Cart) ----- */
+Alpine.data('productCard', (productId, inStock = true) => ({
+    loading: false,
+    added: false,
+
+    async addToCart() {
+        if (!inStock || this.loading || this.added) return;
+        this.loading = true;
+        try {
+            const res = await Alpine.store('cart').add(productId, 1);
+            if (res?.ok) {
+                this.added = true;
+                setTimeout(() => { this.added = false; }, 2500);
+            }
+        } catch (e) {
+            // Error toast is handled by the cart store
+        } finally {
+            this.loading = false;
+        }
+    },
+}));
+
 console.log('✓ Alpine.js components registered');

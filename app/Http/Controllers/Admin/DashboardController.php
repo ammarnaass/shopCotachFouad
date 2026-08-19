@@ -3,14 +3,13 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
-use App\Models\Coupon;
-use App\Models\Order;
-use App\Models\OrderItem;
-use App\Models\Product;
-use App\Models\ShippingCompany;
-use App\Models\User;
+use App\Models\Catalog\Coupon;
+use App\Models\Catalog\Product;
+use App\Models\Order\Order;
+use App\Models\Order\OrderItem;
+use App\Models\Shipping\ShippingCompany;
+use App\Models\User\User;
 use Illuminate\Http\Request;
-use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\View\View;
@@ -22,7 +21,7 @@ class DashboardController extends Controller
         // Main KPIs
         $stats = [
             'total_revenue' => Order::where('payment_status', 'paid')->sum('grand_total')
-                + Order::where('status', 'delivered')->whereHas('payment', fn($q) => $q->where('method', 'cod'))->sum('grand_total'),
+                + Order::where('status', 'delivered')->whereHas('payment', fn ($q) => $q->where('method', 'cod'))->sum('grand_total'),
             'total_orders' => Order::count(),
             'pending_orders' => Order::whereIn('status', ['pending', 'confirmed'])->count(),
             'processing_orders' => Order::where('status', 'processing')->count(),
@@ -98,9 +97,9 @@ class DashboardController extends Controller
 
         // Top selling products (by quantity sold)
         $topProducts = OrderItem::select('product_id', 'product_name',
-                DB::raw('SUM(quantity) as total_qty'),
-                DB::raw('SUM(total) as total_revenue'),
-                DB::raw('COUNT(DISTINCT order_id) as orders_count'))
+            DB::raw('SUM(quantity) as total_qty'),
+            DB::raw('SUM(total) as total_revenue'),
+            DB::raw('COUNT(DISTINCT order_id) as orders_count'))
             ->whereNotNull('product_id')
             ->groupBy('product_id', 'product_name')
             ->orderByDesc('total_qty')
@@ -131,7 +130,7 @@ class DashboardController extends Controller
 
         // Quick settings (read from config)
         $settings = [
-            'currency' => config('ecommerce.store.currency') . ' (' . config('ecommerce.store.currency_symbol') . ')',
+            'currency' => config('ecommerce.store.currency').' ('.config('ecommerce.store.currency_symbol').')',
             'shipping_company' => config('ecommerce.shipping.default_company'),
             'payment_method' => 'COD (عند الاستلام)',
             'theme' => 'Light Mode',
@@ -161,16 +160,16 @@ class DashboardController extends Controller
         };
 
         $envPath = base_path('.env');
-        if (!file_exists($envPath)) {
+        if (! file_exists($envPath)) {
             return response()->json(['success' => false, 'message' => '.env غير موجود'], 404);
         }
 
         $content = file_get_contents($envPath);
-        $pattern = "/^" . preg_quote($envKey, '/') . "=.*$/m";
+        $pattern = '/^'.preg_quote($envKey, '/').'=.*$/m';
         if (preg_match($pattern, $content)) {
-            $content = preg_replace($pattern, $envKey . '=' . $data['value'], $content);
+            $content = preg_replace($pattern, $envKey.'='.$data['value'], $content);
         } else {
-            $content .= PHP_EOL . $envKey . '=' . $data['value'];
+            $content .= PHP_EOL.$envKey.'='.$data['value'];
         }
         file_put_contents($envPath, $content);
 
@@ -184,7 +183,10 @@ class DashboardController extends Controller
     {
         $current = $model::where('created_at', '>=', now()->subDays($days))->count();
         $previous = $model::whereBetween('created_at', [now()->subDays($days * 2), now()->subDays($days)])->count();
-        if ($previous == 0) return $current > 0 ? 100.0 : 0.0;
+        if ($previous == 0) {
+            return $current > 0 ? 100.0 : 0.0;
+        }
+
         return round((($current - $previous) / $previous) * 100, 1);
     }
 }

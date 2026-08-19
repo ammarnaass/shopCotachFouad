@@ -3,9 +3,12 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
-use App\Models\Order;
-use App\Models\OrderNote;
-use App\Models\OrderStatusHistory;
+use App\Http\Requests\Admin\BulkOrderActionRequest;
+use App\Http\Requests\Admin\StoreOrderNoteRequest;
+use App\Http\Requests\Admin\UpdateOrderStatusRequest;
+use App\Models\Order\Order;
+use App\Models\Order\OrderNote;
+use App\Models\Order\OrderStatusHistory;
 use App\Services\OrderService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -19,22 +22,20 @@ class OrderController extends Controller
     {
         $query = Order::with('user', 'items');
 
-        // Search
         if ($request->search) {
             $search = $request->search;
             $query->where(function ($q) use ($search) {
                 $q->where('order_number', 'like', "%{$search}%")
-                  ->orWhereHas('user', function ($q2) use ($search) {
-                      $q2->where('name', 'like', "%{$search}%")
-                         ->orWhere('email', 'like', "%{$search}%")
-                         ->orWhere('phone', 'like', "%{$search}%");
-                  })
-                  ->orWhere('guest_email', 'like', "%{$search}%")
-                  ->orWhere('guest_phone', 'like', "%{$search}%");
+                    ->orWhereHas('user', function ($q2) use ($search) {
+                        $q2->where('name', 'like', "%{$search}%")
+                            ->orWhere('email', 'like', "%{$search}%")
+                            ->orWhere('phone', 'like', "%{$search}%");
+                    })
+                    ->orWhere('guest_email', 'like', "%{$search}%")
+                    ->orWhere('guest_phone', 'like', "%{$search}%");
             });
         }
 
-        // Filters
         if ($request->status) {
             $query->where('status', $request->status);
         }
@@ -79,14 +80,11 @@ class OrderController extends Controller
         return view('admin.orders.show', compact('order', 'notes', 'statusHistory'));
     }
 
-    public function updateStatus(Request $request, Order $order): RedirectResponse
+    public function updateStatus(UpdateOrderStatusRequest $request, Order $order): RedirectResponse
     {
-        $request->validate(['status' => 'required|in:pending,confirmed,processing,shipped,delivered,cancelled']);
-
         $previousStatus = $order->status;
         $this->orderService->updateStatus($order, $request->status);
 
-        // Record status history
         OrderStatusHistory::create([
             'order_id' => $order->id,
             'user_id' => auth()->id(),
@@ -98,13 +96,8 @@ class OrderController extends Controller
         return redirect()->back()->with('success', 'تم تحديث حالة الطلب');
     }
 
-    public function addNote(Request $request, Order $order): RedirectResponse
+    public function addNote(StoreOrderNoteRequest $request, Order $order): RedirectResponse
     {
-        $request->validate([
-            'note' => 'required|string',
-            'is_customer_note' => 'boolean',
-        ]);
-
         OrderNote::create([
             'order_id' => $order->id,
             'user_id' => auth()->id(),
@@ -118,54 +111,41 @@ class OrderController extends Controller
     public function deleteNote(OrderNote $note): RedirectResponse
     {
         $note->delete();
+
         return redirect()->back()->with('success', 'تم حذف الملاحظة');
     }
 
     public function destroy(Order $order): RedirectResponse
     {
         $order->delete();
+
         return redirect()->route('admin.orders.index')->with('success', 'تم حذف الطلب');
     }
 
-    public function bulkAction(Request $request): RedirectResponse
+    public function bulkAction(BulkOrderActionRequest $request): RedirectResponse
     {
-        $request->validate([
-            'action' => 'required|in:update_status,delete,print_labels',
-            'order_ids' => 'required|array|min:1',
-            'status' => 'required_if:action,update_status|in:pending,confirmed,processing,shipped,delivered,cancelled',
-        ]);
-
         $action = $request->action;
         $orderIds = $request->order_ids;
         $orders = Order::whereIn('id', $orderIds)->get();
         $count = 0;
 
         foreach ($orders as $order) {
-            switch ($action) {
-                case 'update_status':
-                    $previousStatus = $order->status;
-                    if ($previousStatus !== $request->status) {
-                        $this->orderService->updateStatus($order, $request->status);
-                        OrderStatusHistory::create([
-                            'order_id' => $order->id,
-                            'user_id' => auth()->id(),
-                            'status' => $request->status,
-                            'previous_status' => $previousStatus,
-                            'note' => 'تحديث جماعي للحالة',
-                        ]);
-                        $count++;
-                    }
-                    break;
-
-                case 'delete':
-                    $order->delete();
+            if ($action === 'update_status') {
+                $previousStatus = $order->status;
+                if ($previousStatus !== $request->status) {
+                    $this->orderService->updateStatus($order, $request->status);
+                    OrderStatusHistory::create([
+                        'order_id' => $order->id,
+                        'user_id' => auth()->id(),
+                        'status' => $request->status,
+                        'previous_status' => $previousStatus,
+                        'note' => 'تحديث جماعي للحالة',
+                    ]);
                     $count++;
-                    break;
-
-                case 'print_labels':
-                    // Just count for now - actual printing would generate PDFs
-                    $count++;
-                    break;
+                }
+            } else {
+                $order->delete();
+                $count++;
             }
         }
 
@@ -173,8 +153,10 @@ class OrderController extends Controller
             'update_status' => "تم تحديث حالة {$count} طلب",
             'delete' => "تم حذف {$count} طلب",
             'print_labels' => "تم تحديد {$count} طلب للطباعة",
+            'print_invoices' => "تم تحديد {$count} طلب لطباعة الفواتير",
+            'print_customer_labels' => "تم تحديد {$count} طلب لطباعة ملصقات العملاء",
         ];
 
-        return redirect()->route('admin.orders.index')->with('success', $messages[$action]);
+        return redirect()->route('admin.orders.index')->with('success', $messages[$action] ?? 'تم تنفيذ الإجراء');
     }
 }

@@ -2,20 +2,16 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\NewsletterSubscriber;
+use App\Http\Requests\Web\NewsletterSubscribeRequest;
+use App\Models\Content\NewsletterSubscriber;
 use Illuminate\Http\RedirectResponse;
-use Illuminate\Http\Request;
 
 class NewsletterController extends Controller
 {
-    public function subscribe(Request $request): RedirectResponse
+    public function subscribe(NewsletterSubscribeRequest $request): RedirectResponse
     {
-        $data = $request->validate([
-            'email' => 'required|email|max:255',
-        ]);
-
         NewsletterSubscriber::firstOrCreate(
-            ['email' => $data['email']],
+            ['email' => $request->email],
             ['status' => 'active', 'subscribed_at' => now()]
         );
 

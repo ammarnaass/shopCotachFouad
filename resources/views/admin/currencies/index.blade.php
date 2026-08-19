@@ -5,9 +5,9 @@
 
 @section('content')
 @php
-    $storeCurrency = $storeCurrency ?? 'SDG';
-    $storeSymbol = $storeSymbol ?? 'ج.س';
-    $defaultCountry = $defaultCountry ?? 'SD';
+    $storeCurrency = $storeCurrency ?? 'DZD';
+    $storeSymbol = $storeSymbol ?? 'د.ج';
+    $defaultCountry = $defaultCountry ?? 'DZ';
 @endphp
 
 {{-- Breadcrumbs --}}

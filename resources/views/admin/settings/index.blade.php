@@ -6,10 +6,12 @@
 $activeTab = request('tab', 'store');
 $tabs = [
     'store' => ['icon' => 'store', 'title' => __t('admin.settings.store_tab')],
+    'store_extended' => ['icon' => 'location_on', 'title' => __t('admin.settings.store_extended_tab')],
     'currency' => ['icon' => 'payments', 'title' => __t('admin.settings.currency_tab')],
     'social' => ['icon' => 'share', 'title' => __t('admin.settings.social_tab')],
     'contact' => ['icon' => 'headset_mic', 'title' => __t('admin.settings.contact_tab')],
     'seo' => ['icon' => 'search', 'title' => __t('admin.settings.seo_tab')],
+    'invoice_info' => ['icon' => 'receipt_long', 'title' => __t('admin.settings.invoice_info_tab')],
 ];
 @endphp
 
@@ -201,6 +203,62 @@ $tabs = [
                 </div>
             </section>
 
+            @elseif($activeTab === 'store_extended')
+            <section class="settings-card rounded-xl p-6">
+                <div class="flex items-center gap-2 mb-6 pb-4 border-b border-outline-variant">
+                    <span class="material-symbols-outlined text-primary">location_on</span>
+                    <h4 class="font-semibold text-lg">{{ __t('admin.settings.store_extended_title') }}</h4>
+                </div>
+                <p class="text-xs text-on-surface-variant mb-6">{{ __t('admin.settings.store_extended_hint') }}</p>
+                <div class="grid md:grid-cols-2 gap-6">
+                    <div class="space-y-2">
+                        <label class="block text-sm font-medium text-on-surface-variant">{{ __t('admin.settings.store_wilaya') }}</label>
+                        <div class="relative">
+                            <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-lg">location_on</span>
+                            <input type="text" name="store_wilaya" value="{{ old('store_wilaya', $settings['store_extended']['store_wilaya']) }}"
+                                   class="w-full rounded-lg border-outline-variant bg-white p-2.5 pl-10 text-body-md @error('store_wilaya') border-error @enderror">
+                        </div>
+                        @error('store_wilaya')<p class="text-error text-xs mt-1">{{ $message }}</p>@enderror
+                    </div>
+                    <div class="space-y-2">
+                        <label class="block text-sm font-medium text-on-surface-variant">{{ __t('admin.settings.store_commune') }}</label>
+                        <div class="relative">
+                            <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-lg">location_city</span>
+                            <input type="text" name="store_commune" value="{{ old('store_commune', $settings['store_extended']['store_commune']) }}"
+                                   class="w-full rounded-lg border-outline-variant bg-white p-2.5 pl-10 text-body-md @error('store_commune') border-error @enderror">
+                        </div>
+                        @error('store_commune')<p class="text-error text-xs mt-1">{{ $message }}</p>@enderror
+                    </div>
+                    <div class="space-y-2">
+                        <label class="block text-sm font-medium text-on-surface-variant">{{ __t('admin.settings.store_postal_code') }}</label>
+                        <div class="relative">
+                            <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-lg">markunread_mailbox</span>
+                            <input type="text" name="store_postal_code" value="{{ old('store_postal_code', $settings['store_extended']['store_postal_code']) }}"
+                                   class="w-full rounded-lg border-outline-variant bg-white p-2.5 pl-10 text-body-md @error('store_postal_code') border-error @enderror">
+                        </div>
+                        @error('store_postal_code')<p class="text-error text-xs mt-1">{{ $message }}</p>@enderror
+                    </div>
+                    <div class="space-y-2">
+                        <label class="block text-sm font-medium text-on-surface-variant">{{ __t('admin.settings.store_website') }}</label>
+                        <div class="relative">
+                            <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-lg">language</span>
+                            <input type="text" name="store_website" value="{{ old('store_website', $settings['store_extended']['store_website']) }}"
+                                   class="w-full rounded-lg border-outline-variant bg-white p-2.5 pl-10 text-body-md font-mono text-sm" dir="ltr" placeholder="https://...">
+                        </div>
+                        @error('store_website')<p class="text-error text-xs mt-1">{{ $message }}</p>@enderror
+                    </div>
+                    <div class="space-y-2">
+                        <label class="block text-sm font-medium text-on-surface-variant">{{ __t('admin.settings.store_phone_secondary') }}</label>
+                        <div class="relative">
+                            <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-lg">call</span>
+                            <input type="text" name="store_phone_secondary" value="{{ old('store_phone_secondary', $settings['store_extended']['store_phone_secondary']) }}"
+                                   class="w-full rounded-lg border-outline-variant bg-white p-2.5 pl-10 text-body-md @error('store_phone_secondary') border-error @enderror">
+                        </div>
+                        @error('store_phone_secondary')<p class="text-error text-xs mt-1">{{ $message }}</p>@enderror
+                    </div>
+                </div>
+            </section>
+
             @elseif($activeTab === 'currency')
             <section class="settings-card rounded-xl p-6">
                 <div class="flex items-center gap-2 mb-6 pb-4 border-b border-outline-variant">
@@ -215,7 +273,7 @@ $tabs = [
 
                 @php
                     $countries = config('ecommerce.countries', []);
-                    $currentDefault = \App\Models\Setting::get('default_country', config('ecommerce.default_country', 'SD'));
+                    $currentDefault = \App\Models\Settings\Setting::get('default_country', config('ecommerce.default_country', 'DZ'));
                 @endphp
 
                 <div class="grid md:grid-cols-2 gap-6">
@@ -235,7 +293,7 @@ $tabs = [
                         <label class="block text-sm font-medium text-on-surface-variant">{{ __t('admin.settings.fallback_currency') }}</label>
                         <select name="fallback_currency"
                                 class="w-full rounded-lg border-outline-variant bg-white p-2.5 text-body-md">
-                            @php $fallbackCurr = \App\Models\Setting::get('fallback_currency', 'SDG'); @endphp
+                            @php $fallbackCurr = \App\Models\Settings\Setting::get('fallback_currency', 'SDG'); @endphp
                             @php
                                 $currencies = ['SDG' => __t('admin.settings.currency_sdg'), 'EGP' => __t('admin.settings.currency_egp'), 'DZD' => __t('admin.settings.currency_dzd'), 'MAD' => __t('admin.settings.currency_mad'), 'TND' => __t('admin.settings.currency_tnd'), 'LYD' => __t('admin.settings.currency_lyd'), 'USD' => __t('admin.settings.currency_usd'), 'EUR' => __t('admin.settings.currency_eur')];
                             @endphp
@@ -297,95 +355,6 @@ $tabs = [
                     </div>
                 </div>
             </section>
-
-             @elseif($activeTab === 'checkout')
-            <section class="settings-card rounded-xl p-6">
-                <div class="flex items-center gap-2 mb-6 pb-4 border-b border-outline-variant">
-                    <span class="material-symbols-outlined text-primary">bolt</span>
-                    <h4 class="font-semibold text-lg">{{ __t('admin.settings.checkout_title') }}</h4>
-                </div>
-
-                <div class="mb-6 pb-6 border-b border-outline-variant">
-                    <h5 class="font-bold text-sm mb-3">{{ __t('admin.settings.payment_options') }}</h5>
-                    <label class="flex items-center gap-3 p-3.5 border border-outline-variant rounded-xl cursor-pointer hover:bg-surface-container-low max-w-md">
-                        <input type="checkbox" name="instant_enable_bank_transfer" value="1" {{ (old('_token') ? old('instant_enable_bank_transfer') : $settings['checkout']['instant_enable_bank_transfer']) == '1' ? 'checked' : '' }} class="w-5 h-5 text-primary rounded">
-                        <div>
-                            <span class="text-sm font-semibold block">{{ __t('admin.settings.enable_bank_transfer') }}</span>
-                            <span class="text-xs text-on-surface-variant">{{ __t('admin.settings.enable_bank_transfer_hint') }}</span>
-                        </div>
-                    </label>
-                </div>
-
-                <div>
-                    <h5 class="font-bold text-sm mb-3">{{ __t('admin.settings.form_fields') }}</h5>
-                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                        <div class="p-4 border border-outline-variant rounded-xl space-y-3">
-                            <span class="font-semibold text-sm block border-b border-outline-variant/30 pb-2 mb-2">{{ __t('admin.settings.email_field') }}</span>
-                            <label class="flex items-center gap-2.5 cursor-pointer text-xs">
-                                <input type="checkbox" name="instant_show_email" value="1" {{ (old('_token') ? old('instant_show_email') : $settings['checkout']['instant_show_email']) == '1' ? 'checked' : '' }} class="w-4.5 h-4.5 text-primary rounded">
-                                <span>{{ __t('admin.settings.show_field') }}</span>
-                            </label>
-                            <label class="flex items-center gap-2.5 cursor-pointer text-xs">
-                                <input type="checkbox" name="instant_req_email" value="1" {{ (old('_token') ? old('instant_req_email') : $settings['checkout']['instant_req_email']) == '1' ? 'checked' : '' }} class="w-4.5 h-4.5 text-primary rounded">
-                                <span>{{ __t('admin.settings.required_field') }}</span>
-                            </label>
-                        </div>
-
-                        <div class="p-4 border border-outline-variant rounded-xl space-y-3">
-                            <span class="font-semibold text-sm block border-b border-outline-variant/30 pb-2 mb-2">{{ __t('admin.settings.state_field') }}</span>
-                            <label class="flex items-center gap-2.5 cursor-pointer text-xs">
-                                <input type="checkbox" name="instant_show_state" value="1" {{ (old('_token') ? old('instant_show_state') : $settings['checkout']['instant_show_state']) == '1' ? 'checked' : '' }} class="w-4.5 h-4.5 text-primary rounded">
-                                <span>{{ __t('admin.settings.show_field') }}</span>
-                            </label>
-                            <label class="flex items-center gap-2.5 cursor-pointer text-xs">
-                                <input type="checkbox" name="instant_req_state" value="1" {{ (old('_token') ? old('instant_req_state') : $settings['checkout']['instant_req_state']) == '1' ? 'checked' : '' }} class="w-4.5 h-4.5 text-primary rounded">
-                                <span>{{ __t('admin.settings.required_field') }}</span>
-                            </label>
-                        </div>
-
-                        <div class="p-4 border border-outline-variant rounded-xl space-y-3">
-                            <span class="font-semibold text-sm block border-b border-outline-variant/30 pb-2 mb-2">{{ __t('admin.settings.district_field') }}</span>
-                            <label class="flex items-center gap-2.5 cursor-pointer text-xs">
-                                <input type="checkbox" name="instant_show_district" value="1" {{ (old('_token') ? old('instant_show_district') : $settings['checkout']['instant_show_district']) == '1' ? 'checked' : '' }} class="w-4.5 h-4.5 text-primary rounded">
-                                <span>{{ __t('admin.settings.show_field') }}</span>
-                            </label>
-                            <label class="flex items-center gap-2.5 cursor-pointer text-xs">
-                                <input type="checkbox" name="instant_req_district" value="1" {{ (old('_token') ? old('instant_req_district') : $settings['checkout']['instant_req_district']) == '1' ? 'checked' : '' }} class="w-4.5 h-4.5 text-primary rounded">
-                                <span>{{ __t('admin.settings.required_field') }}</span>
-                            </label>
-                        </div>
-
-                        <div class="p-4 border border-outline-variant rounded-xl space-y-3">
-                            <span class="font-semibold text-sm block border-b border-outline-variant/30 pb-2 mb-2">{{ __t('admin.settings.zip_field') }}</span>
-                            <label class="flex items-center gap-2.5 cursor-pointer text-xs">
-                                <input type="checkbox" name="instant_show_zip" value="1" {{ (old('_token') ? old('instant_show_zip') : $settings['checkout']['instant_show_zip']) == '1' ? 'checked' : '' }} class="w-4.5 h-4.5 text-primary rounded">
-                                <span>{{ __t('admin.settings.show_field') }}</span>
-                            </label>
-                            <label class="flex items-center gap-2.5 cursor-pointer text-xs">
-                                <input type="checkbox" name="instant_req_zip" value="1" {{ (old('_token') ? old('instant_req_zip') : $settings['checkout']['instant_req_zip']) == '1' ? 'checked' : '' }} class="w-4.5 h-4.5 text-primary rounded">
-                                <span>{{ __t('admin.settings.required_field') }}</span>
-                            </label>
-                        </div>
-
-                        <div class="p-4 border border-outline-variant rounded-xl space-y-3">
-                            <span class="font-semibold text-sm block border-b border-outline-variant/30 pb-2 mb-2">{{ __t('admin.settings.notes_field') }}</span>
-                            <label class="flex items-center gap-2.5 cursor-pointer text-xs">
-                                <input type="checkbox" name="instant_show_notes" value="1" {{ (old('_token') ? old('instant_show_notes') : $settings['checkout']['instant_show_notes']) == '1' ? 'checked' : '' }} class="w-4.5 h-4.5 text-primary rounded">
-                                <span>{{ __t('admin.settings.show_notes_field') }}</span>
-                            </label>
-                        </div>
-
-                        <div class="p-4 border border-outline-variant rounded-xl space-y-3">
-                            <span class="font-semibold text-sm block border-b border-outline-variant/30 pb-2 mb-2">{{ __t('admin.settings.coupon_field') }}</span>
-                            <label class="flex items-center gap-2.5 cursor-pointer text-xs">
-                                <input type="checkbox" name="instant_show_coupon" value="1" {{ (old('_token') ? old('instant_show_coupon') : $settings['checkout']['instant_show_coupon']) == '1' ? 'checked' : '' }} class="w-4.5 h-4.5 text-primary rounded">
-                                <span>{{ __t('admin.settings.show_coupon_field') }}</span>
-                            </label>
-                        </div>
-                    </div>
-                </div>
-            </section>
-
 
             @elseif($activeTab === 'social')
             <section class="settings-card rounded-xl p-6">
@@ -454,6 +423,11 @@ $tabs = [
                         <input type="text" name="contact_phone" value="{{ old('contact_phone', $settings['contact']['contact_phone'] ?? '') }}"
                                class="w-full rounded-lg border-outline-variant bg-white p-2.5 text-body-md">
                     </div>
+                    <div class="space-y-2">
+                        <label class="block text-sm font-medium text-on-surface-variant">{{ __t('admin.settings.whatsapp_number') }}</label>
+                        <input type="text" name="contact_whatsapp" value="{{ old('contact_whatsapp', $settings['contact']['contact_whatsapp'] ?? '') }}"
+                               class="w-full rounded-lg border-outline-variant bg-white p-2.5 text-body-md" placeholder="966500000000">
+                    </div>
                     <div class="md:col-span-2 space-y-2">
                         <label class="block text-sm font-medium text-on-surface-variant">{{ __t('admin.settings.contact_address') }}</label>
                         <textarea name="contact_address" rows="2"
@@ -514,6 +488,84 @@ $tabs = [
                     </div>
                 </div>
             </section>
+
+            @elseif($activeTab === 'invoice_info')
+            <section class="settings-card rounded-xl p-6">
+                <div class="flex items-center gap-2 mb-6 pb-4 border-b border-outline-variant">
+                    <span class="material-symbols-outlined text-primary">receipt_long</span>
+                    <h4 class="font-semibold text-lg">{{ __t('admin.settings.invoice_info_title') }}</h4>
+                </div>
+                <p class="text-xs text-on-surface-variant mb-6">{{ __t('admin.settings.invoice_info_hint') }}</p>
+                <div class="grid md:grid-cols-2 gap-6">
+                    <div class="space-y-2">
+                        <label class="block text-sm font-medium text-on-surface-variant">{{ __t('admin.settings.invoice_business_name') }}</label>
+                        <div class="relative">
+                            <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-lg">storefront</span>
+                            <input type="text" name="invoice_business_name" value="{{ old('invoice_business_name', $settings['invoice_info']['invoice_business_name']) }}"
+                                   class="w-full rounded-lg border-outline-variant bg-white p-2.5 pl-10 text-body-md @error('invoice_business_name') border-error @enderror">
+                        </div>
+                        @error('invoice_business_name')<p class="text-error text-xs mt-1">{{ $message }}</p>@enderror
+                    </div>
+                    <div class="space-y-2">
+                        <label class="block text-sm font-medium text-on-surface-variant">{{ __t('admin.settings.invoice_legal_name') }}</label>
+                        <div class="relative">
+                            <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-lg">gavel</span>
+                            <input type="text" name="invoice_legal_name" value="{{ old('invoice_legal_name', $settings['invoice_info']['invoice_legal_name']) }}"
+                                   class="w-full rounded-lg border-outline-variant bg-white p-2.5 pl-10 text-body-md @error('invoice_legal_name') border-error @enderror">
+                        </div>
+                        @error('invoice_legal_name')<p class="text-error text-xs mt-1">{{ $message }}</p>@enderror
+                    </div>
+                    <div class="space-y-2">
+                        <label class="block text-sm font-medium text-on-surface-variant">{{ __t('admin.settings.invoice_rc') }}</label>
+                        <input type="text" name="invoice_rc" value="{{ old('invoice_rc', $settings['invoice_info']['invoice_rc']) }}"
+                               class="w-full rounded-lg border-outline-variant bg-white p-2.5 text-body-md font-mono text-sm @error('invoice_rc') border-error @enderror" dir="ltr">
+                        @error('invoice_rc')<p class="text-error text-xs mt-1">{{ $message }}</p>@enderror
+                    </div>
+                    <div class="space-y-2">
+                        <label class="block text-sm font-medium text-on-surface-variant">{{ __t('admin.settings.invoice_nif') }}</label>
+                        <input type="text" name="invoice_nif" value="{{ old('invoice_nif', $settings['invoice_info']['invoice_nif']) }}"
+                               class="w-full rounded-lg border-outline-variant bg-white p-2.5 text-body-md font-mono text-sm @error('invoice_nif') border-error @enderror" dir="ltr">
+                        @error('invoice_nif')<p class="text-error text-xs mt-1">{{ $message }}</p>@enderror
+                    </div>
+                    <div class="space-y-2">
+                        <label class="block text-sm font-medium text-on-surface-variant">{{ __t('admin.settings.invoice_nis') }}</label>
+                        <input type="text" name="invoice_nis" value="{{ old('invoice_nis', $settings['invoice_info']['invoice_nis']) }}"
+                               class="w-full rounded-lg border-outline-variant bg-white p-2.5 text-body-md font-mono text-sm @error('invoice_nis') border-error @enderror" dir="ltr">
+                        @error('invoice_nis')<p class="text-error text-xs mt-1">{{ $message }}</p>@enderror
+                    </div>
+                    <div class="space-y-2">
+                        <label class="block text-sm font-medium text-on-surface-variant">{{ __t('admin.settings.invoice_phone') }}</label>
+                        <div class="relative">
+                            <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-lg">call</span>
+                            <input type="text" name="invoice_phone" value="{{ old('invoice_phone', $settings['invoice_info']['invoice_phone']) }}"
+                                   class="w-full rounded-lg border-outline-variant bg-white p-2.5 pl-10 text-body-md @error('invoice_phone') border-error @enderror" dir="ltr">
+                        </div>
+                        @error('invoice_phone')<p class="text-error text-xs mt-1">{{ $message }}</p>@enderror
+                    </div>
+                    <div class="space-y-2">
+                        <label class="block text-sm font-medium text-on-surface-variant">{{ __t('admin.settings.invoice_email') }}</label>
+                        <div class="relative">
+                            <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-lg">mail</span>
+                            <input type="email" name="invoice_email" value="{{ old('invoice_email', $settings['invoice_info']['invoice_email']) }}"
+                                   class="w-full rounded-lg border-outline-variant bg-white p-2.5 pl-10 text-body-md @error('invoice_email') border-error @enderror" dir="ltr">
+                        </div>
+                        @error('invoice_email')<p class="text-error text-xs mt-1">{{ $message }}</p>@enderror
+                    </div>
+                    <div class="md:col-span-2 space-y-2">
+                        <label class="block text-sm font-medium text-on-surface-variant">{{ __t('admin.settings.invoice_address') }}</label>
+                        <textarea name="invoice_address" rows="2"
+                                  class="w-full rounded-lg border-outline-variant bg-white p-2.5 text-body-md @error('invoice_address') border-error @enderror">{{ old('invoice_address', $settings['invoice_info']['invoice_address']) }}</textarea>
+                        @error('invoice_address')<p class="text-error text-xs mt-1">{{ $message }}</p>@enderror
+                    </div>
+                    <div class="md:col-span-2 space-y-2">
+                        <label class="block text-sm font-medium text-on-surface-variant">{{ __t('admin.settings.invoice_notes') }}</label>
+                        <textarea name="invoice_notes" rows="3"
+                                  class="w-full rounded-lg border-outline-variant bg-white p-2.5 text-body-md @error('invoice_notes') border-error @enderror">{{ old('invoice_notes', $settings['invoice_info']['invoice_notes']) }}</textarea>
+                        <p class="text-xs text-on-surface-variant mt-1">{{ __t('admin.settings.invoice_notes_hint') }}</p>
+                        @error('invoice_notes')<p class="text-error text-xs mt-1">{{ $message }}</p>@enderror
+                    </div>
+                </div>
+            </section>
             @endif
 
         </div>
@@ -529,12 +581,13 @@ $tabs = [
                         <p class="flex items-start gap-2"><span class="material-symbols-outlined text-xs mt-0.5 text-amber-600">check_circle</span> {{ __t('admin.settings.tip_store_1') }}</p>
                         <p class="flex items-start gap-2"><span class="material-symbols-outlined text-xs mt-0.5 text-amber-600">check_circle</span> {{ __t('admin.settings.tip_store_2') }}</p>
                         <p class="flex items-start gap-2"><span class="material-symbols-outlined text-xs mt-0.5 text-amber-600">check_circle</span> {{ __t('admin.settings.tip_store_3') }}</p>
+                    @elseif($activeTab === 'store_extended')
+                        <p class="flex items-start gap-2"><span class="material-symbols-outlined text-xs mt-0.5 text-amber-600">check_circle</span> {{ __t('admin.settings.tip_store_extended_1') }}</p>
+                        <p class="flex items-start gap-2"><span class="material-symbols-outlined text-xs mt-0.5 text-amber-600">check_circle</span> {{ __t('admin.settings.tip_store_extended_2') }}</p>
                     @elseif($activeTab === 'currency')
                         <p class="flex items-start gap-2"><span class="material-symbols-outlined text-xs mt-0.5 text-amber-600">check_circle</span> {{ __t('admin.settings.tip_currency_1') }}</p>
                         <p class="flex items-start gap-2"><span class="material-symbols-outlined text-xs mt-0.5 text-amber-600">check_circle</span> {{ __t('admin.settings.tip_currency_2') }}</p>
-                    @elseif($activeTab === 'checkout')
-                        <p class="flex items-start gap-2"><span class="material-symbols-outlined text-xs mt-0.5 text-amber-600">check_circle</span> {{ __t('admin.settings.tip_checkout_1') }}</p>
-                        <p class="flex items-start gap-2"><span class="material-symbols-outlined text-xs mt-0.5 text-amber-600">check_circle</span> {{ __t('admin.settings.tip_checkout_2') }}</p>
+
                     @elseif($activeTab === 'social')
                         <p class="flex items-start gap-2"><span class="material-symbols-outlined text-xs mt-0.5 text-amber-600">check_circle</span> {{ __t('admin.settings.tip_social_1') }}</p>
                         <p class="flex items-start gap-2"><span class="material-symbols-outlined text-xs mt-0.5 text-amber-600">check_circle</span> {{ __t('admin.settings.tip_social_2') }}</p>
@@ -544,6 +597,9 @@ $tabs = [
                     @elseif($activeTab === 'seo')
                         <p class="flex items-start gap-2"><span class="material-symbols-outlined text-xs mt-0.5 text-amber-600">check_circle</span> {{ __t('admin.settings.tip_seo_1') }}</p>
                         <p class="flex items-start gap-2"><span class="material-symbols-outlined text-xs mt-0.5 text-amber-600">check_circle</span> {{ __t('admin.settings.tip_seo_2') }}</p>
+                    @elseif($activeTab === 'invoice_info')
+                        <p class="flex items-start gap-2"><span class="material-symbols-outlined text-xs mt-0.5 text-amber-600">check_circle</span> {{ __t('admin.settings.tip_invoice_info_1') }}</p>
+                        <p class="flex items-start gap-2"><span class="material-symbols-outlined text-xs mt-0.5 text-amber-600">check_circle</span> {{ __t('admin.settings.tip_invoice_info_2') }}</p>
                     @endif
                 </div>
             </section>

@@ -3,17 +3,18 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
-use App\Models\ShippingCompany;
-use App\Models\ShippingLabel;
-use App\Models\ShippingMethod;
-use App\Models\ShippingOfficePickup;
-use App\Models\ShippingTracking;
-use App\Models\ShippingZone;
+use App\Models\Catalog\Product;
+use App\Models\Order\Order;
+use App\Models\Shipping\ShippingCompany;
+use App\Models\Shipping\ShippingLabel;
+use App\Models\Shipping\ShippingMethod;
+use App\Models\Shipping\ShippingOfficePickup;
+use App\Models\Shipping\ShippingTracking;
+use App\Models\Shipping\ShippingZone;
 use App\Services\ShippingCalculator;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
-use Illuminate\Support\Facades\Response;
 use Illuminate\View\View;
 
 class ShippingController extends Controller
@@ -58,6 +59,7 @@ class ShippingController extends Controller
         $data = $this->validateCompany($request);
         ShippingCompany::create($data);
         Cache::forget('shipping_companies');
+
         return redirect()->route('admin.shipping.index', ['tab' => 'companies'])->with('success', 'تم إضافة شركة الشحن بنجاح');
     }
 
@@ -71,6 +73,7 @@ class ShippingController extends Controller
         $data = $this->validateCompany($request);
         $company->update($data);
         Cache::forget('shipping_companies');
+
         return redirect()->route('admin.shipping.index', ['tab' => 'companies'])->with('success', 'تم تحديث شركة الشحن بنجاح');
     }
 
@@ -78,6 +81,7 @@ class ShippingController extends Controller
     {
         $company->delete();
         Cache::forget('shipping_companies');
+
         return redirect()->route('admin.shipping.index', ['tab' => 'companies'])->with('success', 'تم حذف شركة الشحن بنجاح');
     }
 
@@ -88,6 +92,7 @@ class ShippingController extends Controller
     {
         $companies = ShippingCompany::where('status', 'active')->get();
         $countries = config('ecommerce.countries', []);
+
         return view('admin.shipping.zone-form', ['zone' => null, 'companies' => $companies, 'countries' => $countries]);
     }
 
@@ -96,6 +101,7 @@ class ShippingController extends Controller
         $data = $this->validateZone($request);
         $data['regions'] = $data['regions'] ?? [];
         ShippingZone::create($data);
+
         return redirect()->route('admin.shipping.index', ['tab' => 'zones'])->with('success', 'تم إضافة منطقة الشحن بنجاح');
     }
 
@@ -103,6 +109,7 @@ class ShippingController extends Controller
     {
         $companies = ShippingCompany::where('status', 'active')->get();
         $countries = config('ecommerce.countries', []);
+
         return view('admin.shipping.zone-form', compact('zone', 'companies', 'countries'));
     }
 
@@ -111,12 +118,14 @@ class ShippingController extends Controller
         $data = $this->validateZone($request);
         $data['regions'] = $data['regions'] ?? [];
         $zone->update($data);
+
         return redirect()->route('admin.shipping.index', ['tab' => 'zones'])->with('success', 'تم تحديث منطقة الشحن بنجاح');
     }
 
     public function destroyZone(ShippingZone $zone): RedirectResponse
     {
         $zone->delete();
+
         return redirect()->route('admin.shipping.index', ['tab' => 'zones'])->with('success', 'تم حذف منطقة الشحن بنجاح');
     }
 
@@ -127,7 +136,8 @@ class ShippingController extends Controller
     {
         $zones = ShippingZone::where('status', 'active')->get();
         $carriers = ShippingCompany::where('status', 'active')->get();
-        $products = \App\Models\Product::where('status', 'active')->select('id', 'name')->get();
+        $products = Product::where('status', 'active')->select('id', 'name')->get();
+
         return view('admin.shipping.method-form', [
             'method' => null, 'zones' => $zones, 'carriers' => $carriers, 'products' => $products,
         ]);
@@ -137,6 +147,7 @@ class ShippingController extends Controller
     {
         $data = $this->validateMethod($request);
         ShippingMethod::create($data);
+
         return redirect()->route('admin.shipping.index', ['tab' => 'methods'])->with('success', 'تم إضافة طريقة الشحن بنجاح');
     }
 
@@ -144,7 +155,8 @@ class ShippingController extends Controller
     {
         $zones = ShippingZone::where('status', 'active')->get();
         $carriers = ShippingCompany::where('status', 'active')->get();
-        $products = \App\Models\Product::where('status', 'active')->select('id', 'name')->get();
+        $products = Product::where('status', 'active')->select('id', 'name')->get();
+
         return view('admin.shipping.method-form', compact('method', 'zones', 'carriers', 'products'));
     }
 
@@ -152,12 +164,14 @@ class ShippingController extends Controller
     {
         $data = $this->validateMethod($request);
         $method->update($data);
+
         return redirect()->route('admin.shipping.index', ['tab' => 'methods'])->with('success', 'تم تحديث طريقة الشحن بنجاح');
     }
 
     public function destroyMethod(ShippingMethod $method): RedirectResponse
     {
         $method->delete();
+
         return redirect()->route('admin.shipping.index', ['tab' => 'methods'])->with('success', 'تم حذف طريقة الشحن بنجاح');
     }
 
@@ -179,6 +193,7 @@ class ShippingController extends Controller
         $data['sort_order'] = $request->input('sort_order', 0);
 
         ShippingMethod::create($data);
+
         return redirect()->route('admin.shipping.index', ['tab' => 'zones'])->with('success', 'تم إضافة طريقة الشحن للمنطقة بنجاح');
     }
 
@@ -188,8 +203,9 @@ class ShippingController extends Controller
     public function createLabel(): View
     {
         $carriers = ShippingCompany::where('status', 'active')->get();
-        $orders = \App\Models\Order::whereIn('status', ['confirmed', 'processing', 'shipped'])
+        $orders = Order::whereIn('status', ['confirmed', 'processing', 'shipped'])
             ->latest()->select('id', 'order_number', 'grand_total')->get();
+
         return view('admin.shipping.label-form', ['label' => null, 'carriers' => $carriers, 'orders' => $orders]);
     }
 
@@ -208,10 +224,11 @@ class ShippingController extends Controller
         ]);
 
         if (empty($data['tracking_number'])) {
-            $data['tracking_number'] = 'SH' . strtoupper(substr(md5(uniqid(mt_rand(), true)), 0, 10));
+            $data['tracking_number'] = 'SH'.strtoupper(substr(md5(uniqid(mt_rand(), true)), 0, 10));
         }
 
         ShippingLabel::create($data);
+
         return redirect()->route('admin.shipping.index', ['tab' => 'labels'])->with('success', 'تم إنشاء بوليصة الشحن بنجاح');
     }
 
@@ -219,6 +236,7 @@ class ShippingController extends Controller
     {
         $label->load(['order', 'carrier', 'trackingUpdates']);
         $statusOptions = ShippingTracking::getStatuses();
+
         return view('admin.shipping.label-show', compact('label', 'statusOptions'));
     }
 
@@ -231,10 +249,10 @@ class ShippingController extends Controller
         $status = $request->status;
         $updateData = ['status' => $status];
 
-        if ($status === 'shipped' && !$label->shipped_at) {
+        if ($status === 'shipped' && ! $label->shipped_at) {
             $updateData['shipped_at'] = now();
         }
-        if ($status === 'delivered' && !$label->delivered_at) {
+        if ($status === 'delivered' && ! $label->delivered_at) {
             $updateData['delivered_at'] = now();
         }
 
@@ -270,9 +288,10 @@ class ShippingController extends Controller
     public function track(string $number, ShippingCalculator $calculator)
     {
         $tracking = $calculator->trackShipment($number);
-        if (!$tracking) {
+        if (! $tracking) {
             return response()->json(['error' => 'رقم التتبع غير موجود'], 404);
         }
+
         return response()->json($tracking);
     }
 
@@ -314,12 +333,8 @@ class ShippingController extends Controller
 
         $html = view('admin.shipping.label-pdf', compact('label'))->render();
 
-        $pdf = \Barryvdh\DomPDF\PDF::loadHtml($html)
-            ->setPaper('a5', 'landscape')
-            ->setOption('isFontDirTmp', true)
-            ->setOption('isRemoteEnabled', true);
-
-        return $pdf->download('label-' . $label->tracking_number . '.pdf');
+        return app(\App\Services\LabelPdfService::class)
+            ->download($html, 'label-'.$label->tracking_number.'.pdf', 'rtl', 'A5-L');
     }
 
     // ============================================
@@ -335,18 +350,18 @@ class ShippingController extends Controller
             'carrier_id.required' => 'اختر شركة الشحن',
         ]);
 
-        $orders = \App\Models\Order::whereIn('id', $request->order_ids)
+        $orders = Order::whereIn('id', $request->order_ids)
             ->whereIn('status', ['confirmed', 'processing'])
             ->get();
 
         $created = 0;
         foreach ($orders as $order) {
             $exists = ShippingLabel::where('order_id', $order->id)->exists();
-            if (!$exists) {
+            if (! $exists) {
                 $calculator->createLabel(
                     $order->id,
                     $request->carrier_id,
-                    $order->items->sum(fn($item) => ($item->weight ?? 0) * $item->quantity),
+                    $order->items->sum(fn ($item) => ($item->weight ?? 0) * $item->quantity),
                     $order->shipping_cost ?? 0
                 );
                 $created++;
@@ -363,6 +378,7 @@ class ShippingController extends Controller
     public function createPickup(): View
     {
         $carriers = ShippingCompany::where('is_active', true)->orderBy('name')->get();
+
         return view('admin.shipping.pickup-form', ['pickup' => null, 'carriers' => $carriers]);
     }
 
@@ -370,6 +386,7 @@ class ShippingController extends Controller
     {
         $data = $this->validatePickup($request);
         ShippingOfficePickup::create($data);
+
         return redirect()->route('admin.shipping.index', ['tab' => 'pickups'])
             ->with('success', 'تم إضافة مكتب الاستلام');
     }
@@ -378,6 +395,7 @@ class ShippingController extends Controller
     {
         $carriers = ShippingCompany::where('is_active', true)->orderBy('name')->get();
         $pickup->load('carrier');
+
         return view('admin.shipping.pickup-form', compact('pickup', 'carriers'));
     }
 
@@ -385,6 +403,7 @@ class ShippingController extends Controller
     {
         $data = $this->validatePickup($request);
         $pickup->update($data);
+
         return redirect()->route('admin.shipping.index', ['tab' => 'pickups'])
             ->with('success', 'تم تحديث مكتب الاستلام');
     }
@@ -392,6 +411,7 @@ class ShippingController extends Controller
     public function destroyPickup(ShippingOfficePickup $pickup): RedirectResponse
     {
         $pickup->delete();
+
         return redirect()->route('admin.shipping.index', ['tab' => 'pickups'])
             ->with('success', 'تم حذف مكتب الاستلام');
     }

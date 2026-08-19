@@ -2,8 +2,8 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Order;
-use App\Models\Page;
+use App\Models\Content\Page;
+use App\Models\Order\Order;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -17,7 +17,7 @@ class PageController extends Controller
     {
         $pageModel = Page::where('slug', $slug)->where('is_active', true)->first();
 
-        if (!$pageModel) {
+        if (! $pageModel) {
             abort(404, 'الصفحة غير موجودة');
         }
 
@@ -53,12 +53,12 @@ class PageController extends Controller
                     $q->whereHas('user', function ($u) use ($data) {
                         $u->where('email', $data['contact'])->orWhere('phone', $data['contact']);
                     })
-                    ->orWhere('guest_email', $data['contact'])
-                    ->orWhere('guest_phone', $data['contact']);
+                        ->orWhere('guest_email', $data['contact'])
+                        ->orWhere('guest_phone', $data['contact']);
                 })
                 ->first();
 
-            if (!$order) {
+            if (! $order) {
                 $error = 'لم يتم العثور على طلب بهذه البيانات. تحقق من رقم الطلب وعنوان البريد/الهاتف.';
             }
         }
@@ -88,6 +88,7 @@ class PageController extends Controller
                 $normalized[] = ['code' => $key, 'name' => (string) $val];
             }
         }
+
         return response()->json(['states' => $normalized]);
     }
 }

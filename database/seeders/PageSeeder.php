@@ -2,7 +2,7 @@
 
 namespace Database\Seeders;
 
-use App\Models\Page;
+use App\Models\Content\Page;
 use Illuminate\Database\Seeder;
 
 class PageSeeder extends Seeder

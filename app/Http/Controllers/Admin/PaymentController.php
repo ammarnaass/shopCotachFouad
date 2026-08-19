@@ -3,9 +3,8 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
-use App\Models\Order;
-use App\Models\Payment;
-use App\Models\PaymentMethod;
+use App\Models\Order\Payment;
+use App\Models\Order\PaymentMethod;
 use Illuminate\View\View;
 
 class PaymentController extends Controller
@@ -22,6 +21,7 @@ class PaymentController extends Controller
             'total_revenue' => Payment::where('status', 'paid')->sum('amount'),
             'cod_revenue' => Payment::where('method', 'cod')->where('status', 'paid')->sum('amount'),
         ];
+
         return view('admin.payments.index', compact('payments', 'stats', 'methods'));
     }
 }
