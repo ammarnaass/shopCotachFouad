@@ -40,11 +40,39 @@ use App\Services\TranslationService;
 use Illuminate\Support\Facades\Route;
 
 // Language switch (no prefix, no middleware)
-Route::get('/lang/{locale}', function (string $locale) {
-    $locale = in_array($locale, ['ar', 'en', 'fr']) ? $locale : config('ecommerce.languages.default', 'ar');
-    app(TranslationService::class)->setLocale($locale);
+Route::get('/lang/{locale}', function (string $locale, \Illuminate\Http\Request $request) {
+    $supported = config('ecommerce.languages.supported', ['ar', 'en', 'fr']);
+    $target = in_array($locale, $supported) ? $locale : config('ecommerce.languages.default', 'ar');
+    app(TranslationService::class)->setLocale($target);
 
-    return back();
+    $referer = $request->headers->get('referer');
+    if ($referer) {
+        $refererUrl = parse_url($referer);
+        $refererHost = $refererUrl['host'] ?? null;
+        $currentHost = $request->getHost();
+
+        // Only redirect back to internal same-host URLs
+        if ($refererHost === null || $refererHost === $currentHost) {
+            $path = $refererUrl['path'] ?? '/';
+            $query = isset($refererUrl['query']) ? '?' . $refererUrl['query'] : '';
+            $fragment = isset($refererUrl['fragment']) ? '#' . $refererUrl['fragment'] : '';
+
+            $trimmedPath = ltrim($path, '/');
+            $segments = explode('/', $trimmedPath);
+
+            // Replace previous locale prefix if present, or prepend new locale
+            if (!empty($segments[0]) && in_array($segments[0], $supported)) {
+                $segments[0] = $target;
+                $newPath = '/' . implode('/', $segments);
+            } else {
+                $newPath = '/' . $target . ($trimmedPath ? '/' . $trimmedPath : '');
+            }
+
+            return redirect($newPath . $query . $fragment);
+        }
+    }
+
+    return redirect('/' . $target);
 })->name('lang.switch')->whereIn('locale', ['ar', 'en', 'fr']);
 
 // Redirect bare paths (no locale prefix) to locale-prefixed versions

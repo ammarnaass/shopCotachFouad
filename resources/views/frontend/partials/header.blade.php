@@ -190,7 +190,7 @@
                      x-cloak
                      class="absolute end-0 mt-2 w-36 bg-surface-container-lowest rounded-2xl shadow-xl border border-outline-variant/60 py-1.5 z-50 overflow-hidden">
                     @foreach($supportedLangs as $loc => $info)
-                        <a href="{{ route('lang.switch', ['lang' => $loc]) }}"
+                        <a href="{{ route('lang.switch', ['locale' => $loc]) }}"
                            class="flex items-center justify-between px-3.5 py-2 text-xs font-semibold text-on-surface hover:bg-surface-container-low transition-colors {{ $currentLoc === $loc ? 'text-primary bg-primary/5 font-bold' : '' }}">
                             <span class="flex items-center gap-2">
                                 <span>{{ $info['flag'] }}</span>
@@ -451,7 +451,7 @@
                         <span class="px-4 text-[11px] font-bold text-on-surface-variant uppercase tracking-wider block mb-2">اللغة / Language</span>
                         <div class="grid grid-cols-3 gap-1.5 px-1">
                             @foreach($supportedLangs as $loc => $info)
-                                <a href="{{ route('lang.switch', ['lang' => $loc]) }}"
+                                <a href="{{ route('lang.switch', ['locale' => $loc]) }}"
                                    class="flex items-center justify-center gap-1.5 py-2 px-2 rounded-xl text-xs font-bold transition-all {{ $currentLoc === $loc ? 'bg-primary text-white shadow-2xs' : 'bg-surface-container-low text-on-surface hover:bg-surface-container' }}">
                                     <span>{{ $info['flag'] }}</span>
                                     <span>{{ $info['code'] }}</span>
