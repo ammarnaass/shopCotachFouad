@@ -7,6 +7,7 @@
 @php
     $countries = config('ecommerce.countries', []);
     $dzStates = config('ecommerce.countries.DZ.states', []);
+    $storeName = site('store_name', config('app.name'));
 @endphp
 
 {{-- ============ HERO / HEADER ============ --}}
@@ -30,14 +31,39 @@
             </div>
             <div>
                 <h1 class="text-2xl sm:text-3xl md:text-4xl font-extrabold tracking-tight text-white mb-1">{{ __t('account.title') }}</h1>
-                <p class="text-white/90 text-xs sm:text-sm">{{ __t('account.manage_desc') }}</p>
+                <p class="text-white/90 text-xs sm:text-sm">{{ __t('account.manage_desc') ?? 'إدارة بياناتك الشخصية، عناوينك، وكلمات المرور' }}</p>
             </div>
         </div>
     </div>
 </section>
 
 {{-- ============ MAIN CONTAINER ============ --}}
-<div class="container-app py-8 md:py-12" x-data="{ tab: 'profile', country: '{{ old('country_code', $user->country_code ?? 'DZ') }}' }">
+<div class="container-app py-8 md:py-12"
+     x-data="{
+         tab: 'profile',
+         country: '{{ old('country_code', $user->country_code ?? 'DZ') }}',
+         avatarPreview: '{{ $user->avatar ? asset('storage/' . $user->avatar) : '' }}',
+         removeAvatar: false,
+         handleAvatarSelect(e) {
+             const file = e.target.files[0];
+             if (file) {
+                 this.removeAvatar = false;
+                 const reader = new FileReader();
+                 reader.onload = (event) => {
+                     this.avatarPreview = event.target.result;
+                 };
+                 reader.readAsDataURL(file);
+             }
+         },
+         clearAvatar() {
+             this.avatarPreview = '';
+             this.removeAvatar = true;
+             if (this.$refs.avatarInput) {
+                 this.$refs.avatarInput.value = '';
+             }
+         }
+     }">
+
     @if(session('success'))
         <div class="mb-6 p-4 rounded-2xl bg-emerald-50 border border-emerald-200/80 text-emerald-800 flex items-center gap-3 shadow-xs animate-fade-in">
             <span class="material-symbols-outlined text-emerald-600 text-xl flex-shrink-0">check_circle</span>
@@ -62,31 +88,37 @@
             <div class="bg-surface-container-lowest border border-outline-variant/40 rounded-2xl shadow-xs overflow-hidden sticky top-24">
                 {{-- Profile Info Summary --}}
                 <div class="p-6 text-center border-b border-outline-variant/30 bg-surface-container-low/30">
-                    @if($user->avatar)
-                        <img src="{{ asset('storage/' . $user->avatar) }}" class="w-20 h-20 rounded-2xl object-cover ring-4 ring-primary/10 shadow-sm mx-auto mb-3" alt="{{ $user->name }}">
-                    @else
-                        <div class="w-20 h-20 rounded-2xl bg-gradient-to-br from-primary to-primary-container text-white mx-auto flex items-center justify-center text-3xl font-black shadow-sm ring-4 ring-primary/10 mb-3">
-                            {{ mb_substr($user->name, 0, 1) }}
-                        </div>
-                    @endif
+                    {{-- Avatar Display --}}
+                    <div class="relative w-20 h-20 mx-auto mb-3">
+                        <template x-if="avatarPreview">
+                            <img :src="avatarPreview" class="w-20 h-20 rounded-2xl object-cover ring-4 ring-primary/10 shadow-sm mx-auto" alt="{{ $user->name }}">
+                        </template>
+                        <template x-if="!avatarPreview">
+                            <div class="w-20 h-20 rounded-2xl bg-gradient-to-br from-primary to-primary-container text-white mx-auto flex items-center justify-center text-3xl font-black shadow-sm ring-4 ring-primary/10">
+                                {{ mb_substr($user->name, 0, 1) }}
+                            </div>
+                        </template>
+                    </div>
+
                     <h2 class="font-extrabold text-base sm:text-lg text-on-surface">{{ $user->name }}</h2>
                     <p class="text-xs text-on-surface-variant font-mono mt-0.5 truncate">{{ $user->email }}</p>
 
+                    {{-- Role / Store Manager Badge --}}
                     <div class="mt-2.5 flex justify-center gap-1.5 flex-wrap">
                         @if($user->role === 'admin' || $user->roles->contains('name', 'admin'))
-                            <span class="inline-flex items-center gap-1 bg-red-50 text-red-700 border border-red-200/60 px-2.5 py-0.5 rounded-full text-xs font-bold">
+                            <span class="inline-flex items-center gap-1 bg-red-50 text-red-700 border border-red-200/60 px-2.5 py-0.5 rounded-full text-xs font-bold shadow-2xs">
                                 <span class="material-symbols-outlined text-[13px]">shield_person</span>
-                                {{ __t('admin.users.role_admin') ?? 'مدير' }}
+                                <span>مدير {{ $storeName }}</span>
                             </span>
                         @elseif($user->role === 'manager' || $user->roles->contains('name', 'manager'))
-                            <span class="inline-flex items-center gap-1 bg-blue-50 text-blue-700 border border-blue-200/60 px-2.5 py-0.5 rounded-full text-xs font-bold">
+                            <span class="inline-flex items-center gap-1 bg-blue-50 text-blue-700 border border-blue-200/60 px-2.5 py-0.5 rounded-full text-xs font-bold shadow-2xs">
                                 <span class="material-symbols-outlined text-[13px]">badge</span>
-                                {{ __t('admin.users.role_manager') ?? 'مشرف' }}
+                                <span>مشرف {{ $storeName }}</span>
                             </span>
                         @else
-                            <span class="inline-flex items-center gap-1 bg-surface-container-low text-on-surface-variant border border-outline-variant/60 px-2.5 py-0.5 rounded-full text-xs font-semibold">
+                            <span class="inline-flex items-center gap-1 bg-surface-container-low text-on-surface-variant border border-outline-variant/60 px-2.5 py-0.5 rounded-full text-xs font-semibold shadow-2xs">
                                 <span class="material-symbols-outlined text-[13px]">person</span>
-                                {{ __t('admin.users.role_customer') ?? 'عميل' }}
+                                <span>{{ __t('admin.users.role_customer') ?? 'عميل' }}</span>
                             </span>
                         @endif
                     </div>
@@ -148,20 +180,66 @@
         {{-- ============ CONTENT TABS ============ --}}
         <div class="lg:col-span-3 space-y-6">
 
-            {{-- Tab 1: Profile --}}
+            {{-- Tab 1: Profile Form --}}
             <div x-show="tab==='profile'" x-cloak class="bg-surface-container-lowest border border-outline-variant/40 rounded-2xl shadow-xs overflow-hidden">
                 <div class="px-6 py-5 border-b border-outline-variant/30 bg-surface-container-low/30 flex items-center gap-2.5">
                     <span class="material-symbols-outlined text-primary text-2xl">person</span>
                     <div>
                         <h2 class="font-extrabold text-base sm:text-lg text-on-surface">{{ __t('account.profile') }}</h2>
-                        <p class="text-xs text-on-surface-variant">تعديل بياناتك ومعلومات التواصل الأساسية</p>
+                        <p class="text-xs text-on-surface-variant">تعديل بياناتك، الصورة الشخصية، ومعلومات التواصل</p>
                     </div>
                 </div>
 
                 <div class="p-6 sm:p-7">
-                    <form method="POST" action="{{ route('account.update') }}">
+                    <form method="POST" action="{{ route('account.update') }}" enctype="multipart/form-data">
                         @csrf
                         @method('PUT')
+
+                        {{-- Avatar Upload Section --}}
+                        <div class="mb-8 p-5 rounded-2xl bg-surface-container-low/30 border border-outline-variant/40 flex flex-col sm:flex-row items-center gap-5">
+                            {{-- Avatar Preview Frame --}}
+                            <div class="relative w-20 h-20 shrink-0">
+                                <template x-if="avatarPreview">
+                                    <img :src="avatarPreview" class="w-20 h-20 rounded-2xl object-cover ring-4 ring-primary/20 shadow-sm" alt="Avatar Preview">
+                                </template>
+                                <template x-if="!avatarPreview">
+                                    <div class="w-20 h-20 rounded-2xl bg-gradient-to-br from-primary to-primary-container text-white flex items-center justify-center text-3xl font-black shadow-sm ring-4 ring-primary/20">
+                                        {{ mb_substr($user->name, 0, 1) }}
+                                    </div>
+                                </template>
+                            </div>
+
+                            {{-- Avatar Controls --}}
+                            <div class="flex-1 text-center sm:text-start space-y-2">
+                                <div>
+                                    <h3 class="font-bold text-sm text-on-surface">الصورة الشخصية</h3>
+                                    <p class="text-xs text-on-surface-variant mt-0.5">يمكنك رفع صورة بتنسيق JPG, PNG, WEBP بحجم أقصى 4MB</p>
+                                </div>
+
+                                <div class="flex items-center justify-center sm:justify-start gap-2.5 flex-wrap pt-1">
+                                    <label class="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-primary text-on-primary font-bold text-xs cursor-pointer hover:brightness-105 active:scale-95 transition-all shadow-2xs">
+                                        <span class="material-symbols-outlined text-base">photo_camera</span>
+                                        <span>اختيار صورة جديدة</span>
+                                        <input type="file" name="avatar" accept="image/png,image/jpeg,image/jpg,image/webp,image/gif"
+                                               x-ref="avatarInput" @change="handleAvatarSelect($event)" class="sr-only">
+                                    </label>
+
+                                    <template x-if="avatarPreview">
+                                        <button type="button" @click="clearAvatar()"
+                                                class="inline-flex items-center gap-1 px-3 py-2 rounded-xl bg-surface-container-low hover:bg-red-50 text-error font-semibold text-xs transition-colors border border-outline-variant/40">
+                                            <span class="material-symbols-outlined text-base">delete</span>
+                                            <span>حذف الصورة</span>
+                                        </button>
+                                    </template>
+                                </div>
+
+                                {{-- Hidden flag to remove avatar if requested --}}
+                                <input type="hidden" name="remove_avatar" :value="removeAvatar ? '1' : '0'">
+                                @error('avatar')<p class="text-error text-xs font-medium">{{ $message }}</p>@enderror
+                            </div>
+                        </div>
+
+                        {{-- Form Inputs --}}
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
                             <div>
                                 <label class="block text-xs font-bold uppercase tracking-wider text-on-surface-variant mb-2">

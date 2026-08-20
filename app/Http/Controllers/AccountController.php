@@ -31,16 +31,30 @@ class AccountController extends Controller
             'phone' => ['required', 'string', Rule::unique('users')->ignore($user->id)],
             'country_code' => 'required|string|size:2',
             'state_code' => 'nullable|string|max:5',
+            'avatar' => 'nullable|image|mimes:jpeg,png,jpg,webp,gif|max:4096',
         ], [], [
             'name' => 'الاسم',
             'email' => 'البريد الإلكتروني',
             'phone' => 'الهاتف',
             'country_code' => 'الدولة',
+            'avatar' => 'الصورة الشخصية',
         ]);
 
         $countries = config('ecommerce.countries', []);
         $dial = $countries[$data['country_code']]['dial_code'] ?? '';
         $data['phone'] = str_starts_with($data['phone'], '+') ? $data['phone'] : ($dial.$data['phone']);
+
+        if ($request->hasFile('avatar')) {
+            if ($user->avatar && \Illuminate\Support\Facades\Storage::disk('public')->exists($user->avatar)) {
+                \Illuminate\Support\Facades\Storage::disk('public')->delete($user->avatar);
+            }
+            $data['avatar'] = $request->file('avatar')->store('avatars', 'public');
+        } elseif ($request->boolean('remove_avatar')) {
+            if ($user->avatar && \Illuminate\Support\Facades\Storage::disk('public')->exists($user->avatar)) {
+                \Illuminate\Support\Facades\Storage::disk('public')->delete($user->avatar);
+            }
+            $data['avatar'] = null;
+        }
 
         $user->update($data);
 
