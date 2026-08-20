@@ -80,11 +80,6 @@
                         </a>
                     </li>
                     <li>
-                        <a href="{{ route('cart.index') }}" class="text-surface-dim hover:text-primary-container hover:underline transition flex items-center gap-2">
-                            <span class="material-symbols-outlined text-[10px] text-primary-container">chevron_right</span> {{ __t('nav.cart') }}
-                        </a>
-                    </li>
-                    <li>
                         <a href="{{ route('orders.index') }}" class="text-surface-dim hover:text-primary-container hover:underline transition flex items-center gap-2">
                             <span class="material-symbols-outlined text-[10px] text-primary-container">chevron_right</span> {{ __t('footer.my_orders') }}
                         </a>

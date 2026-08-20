@@ -215,18 +215,6 @@
                 @endif
             </a>
 
-            {{-- Cart Button with Counter Badge --}}
-            <a href="{{ route('cart.index') }}"
-               class="relative w-10 h-10 flex items-center justify-center rounded-xl bg-surface-container-low/40 hover:bg-primary/10 hover:text-primary text-on-surface-variant transition-all group"
-               aria-label="{{ __t('nav.cart') ?? 'سلة المشتريات' }}" title="{{ __t('nav.cart') ?? 'سلة المشتريات' }}">
-                <span class="material-symbols-outlined text-xl transition-transform group-hover:scale-110">shopping_bag</span>
-                @if(($cartCount ?? 0) > 0)
-                    <span class="absolute -top-1 -end-1 bg-primary text-white text-[10px] min-w-[18px] h-[18px] px-1 rounded-full flex items-center justify-center font-bold font-mono shadow-sm animate-fade-in">
-                        {{ $cartCount }}
-                    </span>
-                @endif
-            </a>
-
             {{-- Language Switcher Dropdown --}}
             <div class="relative" @click.outside="langMenu = false">
                 <button type="button" @click="langMenu = !langMenu"
