@@ -15,11 +15,13 @@ class ProductService
             ->withCount('reviews')
             ->withAvg('reviews', 'rating');
 
-        if (! empty($filters['q'])) {
-            $query->where(function ($q) use ($filters) {
-                $q->where('name', 'like', "%{$filters['q']}%")
-                    ->orWhere('description', 'like', "%{$filters['q']}%")
-                    ->orWhere('sku', 'like', "%{$filters['q']}%");
+        $searchQuery = trim($filters['q'] ?? $filters['search'] ?? $filters['query'] ?? $filters['keyword'] ?? '');
+        if (! empty($searchQuery)) {
+            $query->where(function ($q) use ($searchQuery) {
+                $q->where('name', 'like', "%{$searchQuery}%")
+                    ->orWhere('description', 'like', "%{$searchQuery}%")
+                    ->orWhere('short_description', 'like', "%{$searchQuery}%")
+                    ->orWhere('sku', 'like', "%{$searchQuery}%");
             });
         }
 

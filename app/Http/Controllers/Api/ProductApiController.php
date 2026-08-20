@@ -16,9 +16,34 @@ class ProductApiController extends Controller
         $products = $this->productService->searchProducts($request->all())
             ->paginate($request->get('per_page', 15));
 
+        $symbol = currentCurrencySymbol();
+        $items = collect($products->items())->map(function ($p) use ($symbol) {
+            $img = $p->primaryImage?->image ?? $p->image;
+            $imageUrl = $img
+                ? ((str_starts_with($img, 'http://') || str_starts_with($img, 'https://')) ? $img : asset('storage/' . $img))
+                : null;
+
+            $price = (float) ($p->final_price ?? $p->price ?? 0);
+
+            return [
+                'id' => $p->id,
+                'name' => $p->name,
+                'slug' => $p->slug,
+                'sku' => $p->sku,
+                'price' => $price,
+                'compare_price' => $p->compare_price ? (float) $p->compare_price : null,
+                'formatted_price' => number_format(convertPrice($price), 0) . ' ' . $symbol,
+                'stock' => (int) $p->stock,
+                'in_stock' => (int) $p->stock > 0,
+                'image_url' => $imageUrl,
+                'category_name' => $p->category?->name,
+                'url' => route('shop.show', ['slug' => $p->slug ?: $p->id]),
+            ];
+        });
+
         return response()->json([
             'success' => true,
-            'data' => $products->items(),
+            'data' => $items,
             'meta' => [
                 'current_page' => $products->currentPage(),
                 'last_page' => $products->lastPage(),
