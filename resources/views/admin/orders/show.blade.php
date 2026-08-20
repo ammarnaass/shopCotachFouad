@@ -441,9 +441,21 @@
                     </div>
                     <div>
                         <p class="text-outline text-body-sm">{{ __t('admin.orders.address_label') }}</p>
-                        <p class="text-body-md text-on-surface">{{ $order->shippingAddress->address }}</p>
-                        <p class="text-sm text-on-surface-variant">{{ $order->shippingAddress->city }}@if($order->shippingAddress->state_name) - {{ $order->shippingAddress->state_name }}@endif</p>
-                        <p class="text-sm text-on-surface-variant">{{ $order->shippingAddress->country_name }}</p>
+                        <p class="text-body-md text-on-surface font-medium">{{ $order->shippingAddress->address }}</p>
+                        <div class="mt-2 space-y-1 text-xs text-on-surface-variant">
+                            <p class="flex items-center gap-1.5">
+                                <span class="material-symbols-outlined text-[15px] text-primary">location_city</span>
+                                <span><strong>المدينة / البلدية:</strong> {{ $order->shippingAddress->city ?: '-' }}</span>
+                            </p>
+                            <p class="flex items-center gap-1.5">
+                                <span class="material-symbols-outlined text-[15px] text-primary">map</span>
+                                <span><strong>الولاية / المحافظة:</strong> {{ $order->shippingAddress->state_name ?: ($order->shippingAddress->city ?: '-') }} @if($order->shippingAddress->state_number) <span class="inline-block px-1.5 py-0.5 bg-primary/10 text-primary font-bold rounded text-[11px]">(ولاية رقم {{ $order->shippingAddress->state_number }})</span>@endif</span>
+                            </p>
+                            <p class="flex items-center gap-1.5">
+                                <span class="material-symbols-outlined text-[15px] text-primary">public</span>
+                                <span><strong>الدولة:</strong> {{ $order->shippingAddress->country_name ?: 'الجزائر' }} ({{ strtoupper($order->shippingAddress->country_code ?: 'DZ') }})</span>
+                            </p>
+                        </div>
                     </div>
                 </div>
             </div>

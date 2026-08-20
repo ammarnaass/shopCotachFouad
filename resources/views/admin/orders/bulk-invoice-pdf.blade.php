@@ -67,8 +67,9 @@
                         <div class="info-row"><span>الاسم:</span><span>{{ $order->shippingAddress->name }}</span></div>
                         <div class="info-row"><span>الهاتف:</span><span>{{ $order->shippingAddress->phone }}</span></div>
                         <div class="info-row"><span>العنوان:</span><span>{{ $order->shippingAddress->address }}</span></div>
-                        <div class="info-row"><span>المدينة:</span><span>{{ $order->shippingAddress->city }} @if($order->shippingAddress->state_name)- {{ $order->shippingAddress->state_name }}@endif</span></div>
-                        <div class="info-row"><span>الدولة:</span><span>{{ $order->shippingAddress->country_name }}</span></div>
+                        <div class="info-row"><span>المدينة:</span><span>{{ $order->shippingAddress->city }}</span></div>
+                        <div class="info-row"><span>الولاية:</span><span>{{ $order->shippingAddress->state_name ?: ($order->shippingAddress->city ?: '-') }} @if($order->shippingAddress->state_number) (ولاية رقم {{ $order->shippingAddress->state_number }}) @endif</span></div>
+                        <div class="info-row"><span>الدولة:</span><span>{{ $order->shippingAddress->country_name ?: 'الجزائر' }}</span></div>
                     @else
                         <p style="font-size:11px;color:#666;">لا يوجد عنوان شحن</p>
                     @endif

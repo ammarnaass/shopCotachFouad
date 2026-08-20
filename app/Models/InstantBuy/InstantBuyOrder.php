@@ -55,16 +55,71 @@ class InstantBuyOrder extends Model
 
     public function getCountryNameAttribute(): string
     {
-        $countries = config('ecommerce.countries', []);
-
-        return $countries[$this->country_code]['name'] ?? $this->country_code;
+        $cc = strtoupper($this->country_code ?: 'DZ');
+        return config("ecommerce.countries.{$cc}.name") ?: ($cc === 'DZ' ? 'الجزائر' : $cc);
     }
 
     public function getStateNameAttribute(): ?string
     {
-        $countries = config('ecommerce.countries', []);
+        $cc = strtoupper($this->country_code ?: 'DZ');
+        $states = config("ecommerce.countries.{$cc}.states", []);
 
-        return $countries[$this->country_code]['states'][$this->state_code] ?? $this->state_code;
+        if (!empty($this->state_code)) {
+            if (isset($states[$this->state_code])) {
+                return $states[$this->state_code];
+            }
+            $padded = str_pad($this->state_code, 2, '0', STR_PAD_LEFT);
+            if (isset($states[$padded])) {
+                return $states[$padded];
+            }
+            if (in_array($this->state_code, $states, true)) {
+                return $this->state_code;
+            }
+        }
+
+        if (!empty($this->city)) {
+            foreach ($states as $name) {
+                if (trim($this->city) === trim($name)) {
+                    return $name;
+                }
+            }
+        }
+
+        return $this->state_code;
+    }
+
+    public function getStateNumberAttribute(): ?string
+    {
+        $cc = strtoupper($this->country_code ?: 'DZ');
+        $states = config("ecommerce.countries.{$cc}.states", []);
+
+        if (!empty($this->state_code)) {
+            if (isset($states[$this->state_code])) {
+                return (string)$this->state_code;
+            }
+            $padded = str_pad($this->state_code, 2, '0', STR_PAD_LEFT);
+            if (isset($states[$padded])) {
+                return $padded;
+            }
+            foreach ($states as $code => $name) {
+                if ($name === $this->state_code) {
+                    return (string)$code;
+                }
+            }
+            if (is_numeric($this->state_code)) {
+                return $padded;
+            }
+        }
+
+        if (!empty($this->city)) {
+            foreach ($states as $code => $name) {
+                if (trim($this->city) === trim($name)) {
+                    return (string)$code;
+                }
+            }
+        }
+
+        return null;
     }
 
     public function scopeNew($query)

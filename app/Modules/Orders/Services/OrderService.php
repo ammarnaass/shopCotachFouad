@@ -138,13 +138,32 @@ class OrderService
             $tax = 0;
             $grandTotal = $subtotal - $discount + $shippingCost + $codFee + $tax;
 
+            $countryCode = strtoupper($data['country_code'] ?? 'DZ');
+            $stateCode = $data['state_code'] ?? null;
+            $city = $data['city'] ?? '';
+
+            if (empty($stateCode) && !empty($city)) {
+                $states = config("ecommerce.countries.{$countryCode}.states", []);
+                foreach ($states as $sCode => $sName) {
+                    if (trim($city) === trim($sName)) {
+                        $stateCode = (string)$sCode;
+                        break;
+                    }
+                }
+            }
+
+            if (empty($city) && !empty($stateCode)) {
+                $states = config("ecommerce.countries.{$countryCode}.states", []);
+                $city = $states[$stateCode] ?? $stateCode;
+            }
+
             $address = ShippingAddress::create([
                 'user_id' => auth()->id(),
                 'name' => $data['name'],
                 'phone' => $data['phone'],
-                'country_code' => $data['country_code'] ?? 'DZ',
-                'state_code' => $data['state_code'] ?? null,
-                'city' => $data['city'],
+                'country_code' => $countryCode,
+                'state_code' => $stateCode,
+                'city' => $city,
                 'district' => $data['district'] ?? null,
                 'address' => $data['address'],
                 'zip' => $data['zip'] ?? null,

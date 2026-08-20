@@ -295,6 +295,27 @@ class InstantBuyOrderController extends Controller
         try {
             DB::beginTransaction();
 
+            $countryCode = strtoupper($data['country_code'] ?? 'DZ');
+            $stateCode = $data['state_code'] ?? null;
+            $city = $data['city'] ?? null;
+
+            // Auto-detect 2-digit wilaya code if state_code is missing but city is specified
+            if (empty($stateCode) && !empty($city)) {
+                $states = config("ecommerce.countries.{$countryCode}.states", []);
+                foreach ($states as $sCode => $sName) {
+                    if (trim($city) === trim($sName)) {
+                        $stateCode = (string)$sCode;
+                        break;
+                    }
+                }
+            }
+
+            // Auto-detect city if missing but state_code is specified
+            if (empty($city) && !empty($stateCode)) {
+                $states = config("ecommerce.countries.{$countryCode}.states", []);
+                $city = $states[$stateCode] ?? $stateCode;
+            }
+
             $order = InstantBuyOrder::create([
                 'order_number' => $orderNumber,
                 'user_id' => auth()->id(),
@@ -302,9 +323,9 @@ class InstantBuyOrderController extends Controller
                 'last_name' => $data['last_name'] ?? '',
                 'phone' => $data['phone'] ?? null,
                 'email' => auth()->user()?->email,
-                'country_code' => $data['country_code'] ?? null,
-                'state_code' => $data['state_code'] ?? null,
-                'city' => $data['city'] ?? null,
+                'country_code' => $countryCode,
+                'state_code' => $stateCode,
+                'city' => $city,
                 'address' => $data['address'] ?? null,
                 'notes' => $data['notes'] ?? null,
                 'product_id' => $product->id,
@@ -336,9 +357,9 @@ class InstantBuyOrderController extends Controller
                 'name' => trim(($data['first_name'] ?? '').' '.($data['last_name'] ?? '')) ?: null,
                 'phone' => $data['phone'] ?? null,
                 'email' => $data['email'] ?? auth()->user()?->email,
-                'country_code' => $data['country_code'] ?? null,
-                'state_code' => $data['state_code'] ?? null,
-                'city' => $data['city'] ?? null,
+                'country_code' => $countryCode,
+                'state_code' => $stateCode,
+                'city' => $city,
                 'district' => $data['district'] ?? null,
                 'address' => $data['address'] ?? null,
                 'zip' => $data['zip'] ?? null,

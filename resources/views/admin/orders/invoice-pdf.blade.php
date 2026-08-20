@@ -169,8 +169,9 @@
                             <tr><td>الاسم</td><td>{{ $order->shippingAddress->name }}</td></tr>
                             <tr><td>الهاتف</td><td>{{ $order->shippingAddress->phone }}</td></tr>
                             <tr><td>العنوان</td><td>{{ $order->shippingAddress->address }}</td></tr>
-                            <tr><td>المدينة</td><td>{{ $order->shippingAddress->city }} @if($order->shippingAddress->state_name)- {{ $order->shippingAddress->state_name }}@endif</td></tr>
-                            <tr><td>الدولة</td><td>{{ $order->shippingAddress->country_name }}</td></tr>
+                            <tr><td>المدينة</td><td>{{ $order->shippingAddress->city }}</td></tr>
+                            <tr><td>الولاية</td><td>{{ $order->shippingAddress->state_name ?: ($order->shippingAddress->city ?: '-') }} @if($order->shippingAddress->state_number) (ولاية رقم {{ $order->shippingAddress->state_number }}) @endif</td></tr>
+                            <tr><td>الدولة</td><td>{{ $order->shippingAddress->country_name ?: 'الجزائر' }}</td></tr>
                         </table>
                     @else
                         <p style="font-size:11px; color:#737686;">لا يوجد عنوان شحن</p>

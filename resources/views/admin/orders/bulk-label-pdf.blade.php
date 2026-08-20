@@ -40,8 +40,8 @@
                     @if($order->shippingAddress)
                         <div class="info-row"><span>العنوان:</span><span>{{ $order->shippingAddress->address }}</span></div>
                         <div class="info-row"><span>المدينة:</span><span>{{ $order->shippingAddress->city }}</span></div>
-                        <div class="info-row"><span>الولاية:</span><span>{{ $order->shippingAddress->state_name ?? '-' }}</span></div>
-                        <div class="info-row"><span>الدولة:</span><span>{{ $order->shippingAddress->country_name ?? '-' }}</span></div>
+                        <div class="info-row"><span>الولاية:</span><span>{{ $order->shippingAddress->state_name ?: ($order->shippingAddress->city ?: '-') }} @if($order->shippingAddress->state_number) (ولاية رقم {{ $order->shippingAddress->state_number }}) @endif</span></div>
+                        <div class="info-row"><span>الدولة:</span><span>{{ $order->shippingAddress->country_name ?: 'الجزائر' }}</span></div>
                     @endif
                 </div>
                 <div>
