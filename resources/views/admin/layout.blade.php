@@ -4,7 +4,21 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <title>@yield('title', __t('admin.title_prefix')) - {{ config('app.name') }}</title>
+    <title>@yield('title', __t('admin.title_prefix')) - {{ site('store_name', config('app.name')) }}</title>
+
+    @php
+        $adminFavicon = site('store_favicon');
+        $adminLogo = site('store_logo');
+        $favIconUrl = $adminFavicon ?: $adminLogo;
+    @endphp
+    @if($favIconUrl)
+        <link rel="icon" type="image/x-icon" href="{{ $favIconUrl }}">
+        <link rel="shortcut icon" href="{{ $favIconUrl }}">
+        <link rel="apple-touch-icon" href="{{ $favIconUrl }}">
+    @else
+        <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='20' fill='%232563eb'/%3E%3Ctext x='50' y='65' text-anchor='middle' fill='white' font-family='sans-serif' font-size='50' font-weight='bold'%3EA%3C/text%3E%3C/svg%3E">
+    @endif
+
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@300;400;500;600;700&display=swap" rel="stylesheet">
@@ -65,8 +79,8 @@
         {{-- Sidebar Brand Header --}}
         <div class="px-6 mb-8 flex items-center justify-between gap-3">
             <div class="flex items-center gap-3 min-w-0">
-                @if(site('store_logo'))
-                    <img src="{{ site('store_logo') }}" alt="{{ site('store_name') }}" class="w-10 h-10 object-contain rounded-xl bg-white p-1 flex-shrink-0 shadow-2xs">
+                @if($favIconUrl)
+                    <img src="{{ $favIconUrl }}" alt="{{ site('store_name', config('app.name')) }}" class="w-10 h-10 object-contain rounded-xl bg-white p-1 flex-shrink-0 shadow-2xs">
                 @else
                     <div class="w-10 h-10 rounded-xl bg-primary-container flex items-center justify-center text-on-primary flex-shrink-0 shadow-2xs">
                         <span class="material-symbols-outlined" style="font-variation-settings:'FILL' 1">storefront</span>
@@ -208,8 +222,10 @@
         {{-- Sidebar User Profile Summary --}}
         <div class="px-6 py-4 mt-auto border-t border-outline/20">
             <div class="flex items-center gap-3">
-                @if(site('store_logo'))
-                    <img src="{{ site('store_logo') }}" alt="logo" class="w-10 h-10 rounded-full object-contain bg-white p-0.5 flex-shrink-0">
+                @if(auth()->user()?->avatar)
+                    <img src="{{ asset('storage/' . auth()->user()->avatar) }}" alt="{{ auth()->user()->name }}" class="w-10 h-10 rounded-full object-cover ring-1 ring-primary/30 flex-shrink-0">
+                @elseif($favIconUrl)
+                    <img src="{{ $favIconUrl }}" alt="icon" class="w-10 h-10 rounded-full object-contain bg-white p-1 flex-shrink-0">
                 @else
                     <div class="w-10 h-10 rounded-full bg-primary-container flex items-center justify-center text-on-primary flex-shrink-0">
                         <span class="material-symbols-outlined" style="font-variation-settings:'FILL' 1">person</span>
@@ -294,8 +310,16 @@
 
                 {{-- External View Store & Logout Actions --}}
                 <div class="flex items-center gap-1.5 sm:gap-2 mr-2 pr-2 border-r border-outline-variant/60">
-                    <a href="{{ route('home') }}" target="_blank" class="p-2 text-on-surface-variant hover:bg-surface-container-low rounded-xl transition-all" title="{{ __t('admin.common.view_store') }}">
-                        <span class="material-symbols-outlined text-xl">open_in_new</span>
+                    <a href="{{ route('home') }}" target="_blank"
+                       class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-surface-container-low hover:bg-surface-container border border-outline-variant/50 text-on-surface font-bold text-xs transition-all shadow-2xs"
+                       title="{{ __t('admin.common.view_store') }}">
+                        @if($favIconUrl)
+                            <img src="{{ $favIconUrl }}" alt="store icon" class="w-4 h-4 rounded-md object-contain">
+                        @else
+                            <span class="material-symbols-outlined text-primary text-base">storefront</span>
+                        @endif
+                        <span class="hidden sm:inline">{{ __t('admin.common.view_store') ?? 'عرض المتجر' }}</span>
+                        <span class="material-symbols-outlined text-xs text-on-surface-variant">open_in_new</span>
                     </a>
                     <form action="{{ route('logout') }}" method="POST" class="inline">
                         @csrf
