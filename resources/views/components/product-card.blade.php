@@ -85,20 +85,20 @@
 
     {{-- Badges --}}
     @if($hasDiscount && $discount > 0)
-        <div class="absolute top-2.5 end-2.5 bg-primary text-on-primary px-2.5 py-0.5 rounded-full text-[10px] sm:text-xs font-bold z-10 shadow-xs">
+        <div class="absolute top-2.5 end-2.5 bg-primary text-on-primary px-2.5 py-0.5 rounded-full text-[10px] sm:text-xs font-bold z-10 shadow-xs font-mono">
             -{{ $discount }}%
         </div>
     @elseif($isOutOfStock)
         <div class="absolute top-2.5 end-2.5 bg-surface-dim text-on-surface-variant px-2.5 py-0.5 rounded-full text-[10px] sm:text-xs font-bold z-10">
-            نفذت الكمية
+            {{ __t('product.out_of_stock', [], 'نفد') }}
         </div>
     @elseif($isNew)
         <div class="absolute top-2.5 end-2.5 bg-tertiary text-on-tertiary px-2.5 py-0.5 rounded-full text-[10px] sm:text-xs font-bold z-10 shadow-xs">
-            جديد
+            {{ __t('product.new', [], 'جديد') }}
         </div>
     @elseif($isFeatured)
         <div class="absolute top-2.5 end-2.5 bg-primary-container text-on-primary-container px-2.5 py-0.5 rounded-full text-[10px] sm:text-xs font-bold z-10 shadow-xs">
-            مميز
+            {{ __t('product.featured', [], 'مميز') }}
         </div>
     @endif
 
@@ -159,11 +159,11 @@
 
             @if($isOutOfStock)
                 <button class="w-full bg-surface-container-high text-on-surface-variant py-2.5 rounded-xl text-xs sm:text-sm font-bold cursor-not-allowed text-center" disabled>
-                    غير متوفر حالياً
+                    {{ __t('product.currently_unavailable', [], 'غير متوفر حالياً') }}
                 </button>
             @else
                 <a href="{{ $url }}" class="w-full bg-primary text-on-primary py-2.5 rounded-xl text-xs sm:text-sm font-bold hover:brightness-105 active:scale-95 transition-all block text-center shadow-2xs">
-                    اضغط هنا للطلب
+                    {{ __t('product.press_to_order', [], 'اضغط هنا للطلب') }}
                 </a>
             @endif
         </div>
