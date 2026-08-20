@@ -4,47 +4,7 @@
     $countryName = $defaultCountry['name'] ?? __t('footer.favorite_store');
 @endphp
 
-{{-- Newsletter section — hidden on auth pages --}}
-@php $isAuthPage = request()->is('*login') || request()->is('*register') || request()->routeIs('login') || request()->routeIs('register'); @endphp
-@if(site('show_newsletter', '1') === '1' && !$isAuthPage && request()->routeIs('home'))
-<section class="relative overflow-hidden" style="background: linear-gradient(135deg, #1e3a8a 0%, #1d4ed8 50%, #7c3aed 100%);">
-    <div class="absolute inset-0 overflow-hidden pointer-events-none">
-        <div class="absolute -top-20 -right-20 w-72 h-72 bg-white/5 rounded-full blur-2xl"></div>
-        <div class="absolute -bottom-20 -left-20 w-96 h-96 bg-white/5 rounded-full blur-2xl"></div>
-        <div class="absolute top-0 left-1/4 w-px h-full bg-white/10"></div>
-        <div class="absolute top-0 right-1/4 w-px h-full bg-white/5"></div>
-        <div class="absolute top-1/2 left-0 w-full h-px bg-white/5"></div>
-    </div>
-    <div class="container-app py-16 relative z-10">
-        <div class="max-w-3xl mx-auto text-center">
-            <div class="inline-flex items-center gap-2 bg-white/15 backdrop-blur-sm px-5 py-2 rounded-full text-sm text-white/90 mb-6 shadow-lg">
-                <span class="material-symbols-outlined text-yellow-300" style="font-size:18px">mail</span>
-                {{ __t('footer.newsletter') }}
-            </div>
-            <h3 class="text-3xl md:text-4xl font-extrabold text-white mb-4 leading-tight">{{ __t('footer.newsletter_title') }}</h3>
-            <p class="text-white/80 mb-8 text-base md:text-lg max-w-xl mx-auto leading-relaxed">{{ __t('footer.newsletter_desc') }}</p>
-            <form class="flex flex-col sm:flex-row max-w-lg mx-auto gap-3 sm:gap-0 shadow-2xl rounded-2xl overflow-hidden"
-                  action="{{ route('newsletter.subscribe') }}" method="POST">
-                @csrf
-                <input type="email" name="email" required placeholder="{{ __t('footer.newsletter_placeholder') }}"
-                       class="flex-1 min-w-0 px-5 py-4 bg-white text-gray-800 text-sm focus:outline-none border-0 focus:ring-2 focus:ring-inset focus:ring-yellow-400"
-                       style="border-radius: 0;">
-                <button type="submit"
-                        class="px-8 py-4 font-bold text-sm whitespace-nowrap flex items-center justify-center gap-2 transition-all duration-200 hover:brightness-110 active:scale-95 cursor-pointer text-white"
-                        style="background: linear-gradient(135deg, #f59e0b, #d97706); border-radius: 0;">
-                    <span class="material-symbols-outlined" style="font-size:18px">send</span>
-                    {{ __t('footer.newsletter_subscribe') }}
-                </button>
-            </form>
-            <p class="text-white/50 text-xs mt-4 flex items-center justify-center gap-3">
-                <span>{{ __t('footer.newsletter_privacy_1') }}</span>
-                <span class="w-1 h-1 bg-white/30 rounded-full"></span>
-                <span>{{ __t('footer.newsletter_privacy_2') }}</span>
-            </p>
-        </div>
-    </div>
-</section>
-@endif
+
 
 {{-- Main footer --}}
 <footer class="bg-secondary text-surface-dim border-t border-outline-variant/20 mt-16">

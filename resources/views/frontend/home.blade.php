@@ -160,51 +160,6 @@
 </section>
 @endif
 
-{{-- ========== CTA BANNER 1 ========== --}}
-@if($section === 'banner_1' && site('show_banner_1', '1') === '1')
-<section class="py-12">
-    <div class="container-app">
-        <div class="relative bg-secondary text-on-primary rounded-3xl p-8 md:p-14 overflow-hidden shadow-xl border border-outline-variant/20">
-            <div class="absolute -top-24 -left-24 w-96 h-96 bg-primary-container/10 rounded-full blur-2xl"></div>
-            <div class="absolute -bottom-24 -right-24 w-[30rem] h-[30rem] bg-primary/20 rounded-full blur-3xl"></div>
-
-            <div class="relative z-10 grid md:grid-cols-2 gap-10 items-center">
-                <div>
-                    <span class="inline-flex items-center gap-2 bg-primary-container text-on-primary-container px-4 py-1.5 rounded-full text-xs font-bold mb-4 shadow-sm">
-                        <span class="material-symbols-outlined text-base">local_shipping</span> {{ __t('home.fast_shipping') }}
-                    </span>
-                    <h2 class="font-sora text-2xl sm:text-3xl md:text-4xl font-extrabold mb-4 leading-tight text-on-primary">
-                        @if(site('banner_1_title'))
-                            {{ site('banner_1_title') }}
-                        @else
-                            {{ __t('home.banner_1_title') }}
-                        @endif
-                    </h2>
-                    <p class="text-surface-dim text-base md:text-lg mb-8 leading-relaxed">
-                        {{ site('banner_1_subtitle', __t('home.banner_1_subtitle')) }}
-                    </p>
-                    <a href="{{ site('banner_1_link') ?: route('shop.index') }}" class="inline-flex items-center gap-2 px-8 py-4 bg-primary-container text-on-primary-container font-sora font-extrabold text-base rounded-2xl shadow-lg hover:bg-inverse-primary hover:scale-105 active:scale-95 transition-all duration-300">
-                        <span class="material-symbols-outlined">shopping_bag</span>
-                        {{ __t('nav.shop_now') }}
-                    </a>
-                </div>
-                <div class="hidden md:flex justify-center">
-                    @if(site('banner_1_image'))
-                        <img src="{{ site('banner_1_image') }}" alt="" loading="lazy" decoding="async" class="rounded-2xl shadow-2xl max-w-md w-full object-cover hover:scale-105 transition-transform duration-500">
-                    @else
-                        <div class="relative">
-                            <div class="w-48 h-48 rounded-full bg-surface-container-high/20 flex items-center justify-center border border-outline-variant/30">
-                                <span class="material-symbols-outlined text-8xl text-primary-container">fitness_center</span>
-                            </div>
-                        </div>
-                    @endif
-                </div>
-            </div>
-        </div>
-    </div>
-</section>
-@endif
-
 {{-- ========== BANNER 2 ========== --}}
 @if($section === 'banner_2' && (site('banner_2_title') || site('banner_2_image')))
 <section class="py-12">
