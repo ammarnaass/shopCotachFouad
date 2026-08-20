@@ -2,20 +2,20 @@
 
 namespace Tests\Feature;
 
-use App\Models\User;
-use App\Models\Product;
-use App\Models\Category;
-use App\Models\Order;
-use App\Models\Coupon;
-use App\Models\Slide;
-use App\Models\Page;
-use App\Models\ShippingCompany;
-use App\Models\ShippingZone;
+use App\Models\User\User;
+use App\Models\Catalog\Product;
+use App\Models\Catalog\Category;
+use App\Models\Order\Order;
+use App\Models\Promotions\Coupon;
+use App\Models\Appearance\Slide;
+use App\Models\Cms\Page;
+use App\Models\Shipping\ShippingCompany;
+use App\Modules\Shipping\Models\ShippingZone;
 use Tests\TestCase;
 
 class RoutesAndCrudAuditTest extends TestCase
 {
-    protected ?User $admin = null;
+    protected mixed $admin = null;
 
     protected function setUp(): void
     {

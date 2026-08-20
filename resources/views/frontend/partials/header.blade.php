@@ -53,7 +53,7 @@
     </div>
 @endif
 
-<header class="sticky top-0 z-50 bg-surface-container-lowest border-b border-outline-variant transition-colors duration-200"
+<header class="sticky top-0 z-50 bg-surface-container-lowest/90 backdrop-blur-md border-b border-outline-variant/40 shadow-2xs transition-all duration-200"
         x-data="{
             mobileMenu: false,
             searchOpen: false,

@@ -7,14 +7,14 @@
     --primary: var(--color-primary, #004ac6);
     --primary-hover: var(--color-primary-container, #2563eb);
     --sale: #ef4444;
-    --star: #f5b301;
-    --text: var(--color-on-surface, #191b23);
+    --star: #f59e0b;
+    --text: var(--color-on-surface, #0f172a);
     --muted: var(--color-outline, #64748b);
     --background: var(--color-surface-container-lowest, #ffffff);
     --card-border: var(--color-outline-variant, #e2e8f0);
-    --radius: 14px;
-    --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.05);
-    --shadow-hover: 0 10px 25px rgba(0, 0, 0, 0.08);
+    --radius: 16px;
+    --shadow-sm: 0 2px 6px -1px rgba(15, 23, 42, 0.05), 0 1px 3px -1px rgba(15, 23, 42, 0.03);
+    --shadow-hover: 0 14px 28px -4px rgba(15, 23, 42, 0.09), 0 4px 10px -2px rgba(15, 23, 42, 0.04);
 }
 
 /* ====================================================================

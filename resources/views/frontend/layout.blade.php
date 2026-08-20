@@ -30,14 +30,18 @@
 
     <link rel="icon" type="image/x-icon" href="{{ site('store_favicon', 'data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 100 100%27%3E%3Crect width=%27100%27 height=%27100%27 rx=%2720%27 fill=%27%234f46e5%27/%3E%3Ctext x=%2750%27 y=%2765%27 text-anchor=%27middle%27 fill=%27white%27 font-family=%27sans-serif%27 font-size=%2750%27 font-weight=%27bold%27%3EA%3C/text%3E%3C/svg%3E') }}">
 
+    {{-- Google Fonts (Readex Pro + Plus Jakarta Sans + Sora + IBM Plex Sans Arabic) --}}
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@300;400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Readex+Pro:wght@300;400;500;600;700&family=Sora:wght@600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+
     {{-- Vite (Tailwind 4 + Alpine.js + custom JS) --}}
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 
-    {{-- Dynamic colors from settings (override Tailwind defaults) --}}
-    {{-- This is THE single source of truth for site colors — Admin → Customize → Theme --}}
+    {{-- Dynamic colors and modern elevation from settings --}}
     <style>
         :root {
-            /* ── Core brand colors from Admin Panel (لوحة الإدارة ← التخصيص ← المظهر) ── */
+            /* ── Core brand colors from Admin Panel ── */
             --color-primary:           {{ $siteSettings['primary_color'] ?? '#2563eb' }};
             --color-accent:            {{ $siteSettings['accent_color']  ?? '#f59e0b' }};
 
@@ -55,6 +59,13 @@
             --color-tertiary-container: color-mix(in srgb, var(--color-accent) 25%, white);
             --color-on-tertiary:        #ffffff;
             --color-on-tertiary-container: color-mix(in srgb, var(--color-accent) 85%, black);
+
+            /* ── Modern Glassmorphism & Shadow Tokens ── */
+            --shadow-subtle: 0 1px 3px 0 rgba(15, 23, 42, 0.04), 0 1px 2px -1px rgba(15, 23, 42, 0.03);
+            --shadow-card: 0 4px 20px -2px rgba(15, 23, 42, 0.06), 0 2px 6px -1px rgba(15, 23, 42, 0.03);
+            --shadow-float: 0 14px 32px -4px rgba(15, 23, 42, 0.09), 0 4px 12px -2px rgba(15, 23, 42, 0.04);
+            --shadow-glow-primary: 0 8px 24px -4px color-mix(in srgb, var(--color-primary) 40%, transparent);
+            --shadow-glow-accent: 0 8px 24px -4px color-mix(in srgb, var(--color-accent) 40%, transparent);
         }
 
         /* ── Utility overrides — Tailwind bg-primary / text-primary / border-primary ── */
@@ -160,42 +171,27 @@
     {{-- JSON-LD and other per-page head content --}}
     @stack('head')
 
-    {{-- Smooth page transitions (avoids the "browser closes and reopens" feeling) --}}
+    {{-- Smooth page transitions & Navigation Progress Bar --}}
     <style>
         /* Fade transition between page navigations */
         @view-transitions { navigation: auto; }
         ::view-transition-old(root),
-        ::view-transition-new(root) { animation-duration: 0.18s; }
-        ::view-transition-old(root) { animation: fade-out 0.18s ease-out both; }
-        ::view-transition-new(root) { animation: fade-in 0.22s ease-out both; }
-        @keyframes fade-out { to { opacity: 0; } }
-        @keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
+        ::view-transition-new(root) { animation-duration: 0.22s; }
+        ::view-transition-old(root) { animation: fade-out 0.2s cubic-bezier(0.16, 1, 0.3, 1) both; }
+        ::view-transition-new(root) { animation: fade-in 0.25s cubic-bezier(0.16, 1, 0.3, 1) both; }
+        @keyframes fade-out { to { opacity: 0; transform: translateY(-4px); } }
+        @keyframes fade-in { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
 
         /* Loading indicator at top of page when navigating */
         html.is-loading { cursor: progress; }
-        html.is-loading::before {
-            content: '';
-            position: fixed;
-            top: 0; left: 0; right: 0;
-            height: 3px;
-            background: linear-gradient(90deg,
-                {{ $siteSettings['primary_color'] ?? '#2563eb' }},
-                {{ $siteSettings['accent_color'] ?? '#f59e0b' }});
-            z-index: 99999;
-            animation: loading-bar 1s ease-in-out infinite;
-        }
-        @keyframes loading-bar {
-            0%   { transform: translateX(-100%); }
-            50%  { transform: translateX(0%); }
-            100% { transform: translateX(100%); }
-        }
     </style>
 </head>
 <body class="bg-surface text-on-surface min-h-screen flex flex-col antialiased">
+    <div id="page-progress-bar" class="page-progress-bar"></div>
 
     {{-- Skip to content (accessibility) --}}
     <a href="#main-content"
-       class="sr-only focus:not-sr-only focus:fixed focus:top-4 focus:start-4 focus:z-[9999] focus:bg-brand-600 focus:text-white focus:px-4 focus:py-2 focus:rounded-lg focus:shadow-lg focus:font-bold focus:outline-none focus:ring-2 focus:ring-white">
+       class="sr-only focus:not-sr-only focus:fixed focus:top-4 focus:start-4 focus:z-[9999] focus:bg-primary focus:text-on-primary focus:px-4 focus:py-2 focus:rounded-lg focus:shadow-lg focus:font-bold focus:outline-none focus:ring-2 focus:ring-white">
         {{ __t('layout.skip_to_content', [], 'انتقل إلى المحتوى الرئيسي') }}
     </a>
 
