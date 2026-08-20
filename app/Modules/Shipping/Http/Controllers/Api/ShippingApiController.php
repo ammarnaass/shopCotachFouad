@@ -38,8 +38,25 @@ class ShippingApiController extends Controller
         return response()->json(['success' => true, 'data' => $zones]);
     }
 
+    /**
+     * @deprecated استخدم POST /api/shipping/calculate بدلًا من هذا المسار.
+     *
+     * هذا المسار يقبل `country_id` رقمي (ثغرة كامنة: يُقارَن بأكواد ISO نصية بقاعدة البيانات).
+     * الـ endpoint الجديد يقبل `country_code` (ISO alpha-2 نصي) ويُطبّعه تلقائيًا.
+     *
+     * سيُحذف هذا المسار بعد تأكيد هجرة كل العملاء (ويب + موبايل) للـ endpoint الجديد.
+     * تاريخ التقاعد المستهدف: بعد مرحلة staging.
+     */
     public function calculate(Request $request, ShippingCalculator $calculator): JsonResponse
     {
+        \Illuminate\Support\Facades\Log::warning('shipping.legacy_endpoint_used', [
+            'endpoint'   => '/api/shipping/calculate (OLD)',
+            'user_agent' => $request->userAgent(),
+            'ip'         => $request->ip(),
+            'payload'    => $request->only(['city', 'country_id', 'country_code', 'subtotal']),
+            'note'       => 'يجب الهجرة لـ POST /api/shipping/calculate الجديد',
+        ]);
+
         $request->validate([
             'city' => 'nullable|string',
             'country_id' => 'nullable|integer',

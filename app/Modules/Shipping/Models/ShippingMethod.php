@@ -2,48 +2,96 @@
 
 namespace App\Modules\Shipping\Models;
 
-use App\Modules\Coupons\Models\Coupon;
+use App\Modules\Shipping\Exceptions\InvalidShippingConfigurationException;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class ShippingMethod extends Model
 {
+    use HasFactory;
+
+    protected static function newFactory(): \Database\Factories\Shipping\ShippingMethodFactory
+    {
+        return \Database\Factories\Shipping\ShippingMethodFactory::new();
+    }
     protected $fillable = [
-        'zone_id', 'name', 'type', 'carrier_id',
-        'flat_rate_amount',
-        'cost_per_kg', 'free_threshold',
-        'min_order_value', 'max_order_value',
-        'free_shipping_min', 'free_shipping_requires',
-        'weight_ranges',
-        'product_ids',
-        'covered_cities', 'excluded_cities',
-        'api_settings',
-        'zone_rates',
-        'estimated_days',
-        'tax_status', 'status', 'sort_order',
+        'shipping_zone_id',
+        'zone_id', // حقل قديم — مطلوب للتوافقية مع schema الحالي
+        'name',
+        'code',
+        'calculation_type',
+        'base_cost',
+        'cost_per_kg',
+        'free_shipping_threshold',
+        'min_delivery_days',
+        'max_delivery_days',
+        'status',
+        'sort_order',
+        'method_order',
     ];
 
     protected $casts = [
-        'weight_ranges' => 'array',
-        'product_ids' => 'array',
-        'covered_cities' => 'array',
-        'excluded_cities' => 'array',
-        'api_settings' => 'array',
-        'zone_rates' => 'array',
-        'flat_rate_amount' => 'decimal:2',
+        'base_cost' => 'decimal:2',
         'cost_per_kg' => 'decimal:2',
-        'free_threshold' => 'decimal:2',
-        'min_order_value' => 'decimal:2',
-        'max_order_value' => 'decimal:2',
-        'free_shipping_min' => 'decimal:2',
-        'status' => 'boolean',
+        'free_shipping_threshold' => 'decimal:2',
+        'min_delivery_days' => 'integer',
+        'max_delivery_days' => 'integer',
         'sort_order' => 'integer',
+        'method_order' => 'integer',
     ];
+
+    protected static function booted(): void
+    {
+        static::saving(function (ShippingMethod $method) {
+            // مزامنة حقلين zone_id و shipping_zone_id
+            if (empty($method->shipping_zone_id) && !empty($method->zone_id)) {
+                $method->shipping_zone_id = $method->zone_id;
+            } elseif (empty($method->zone_id) && !empty($method->shipping_zone_id)) {
+                $method->zone_id = $method->shipping_zone_id;
+            }
+
+            // مزامنة التكلفة الأساسية base_cost مع flat_rate_amount
+            if (empty($method->base_cost) && isset($method->attributes['flat_rate_amount'])) {
+                $method->base_cost = (float) $method->attributes['flat_rate_amount'];
+            } elseif (!isset($method->attributes['flat_rate_amount']) && !empty($method->base_cost)) {
+                $method->attributes['flat_rate_amount'] = (float) $method->base_cost;
+            }
+
+            // مزامنة حد الشحن المجاني
+            if (empty($method->free_shipping_threshold) && isset($method->attributes['free_shipping_min'])) {
+                $method->free_shipping_threshold = (float) $method->attributes['free_shipping_min'];
+            } elseif (!isset($method->attributes['free_shipping_min']) && !empty($method->free_shipping_threshold)) {
+                $method->attributes['free_shipping_min'] = (float) $method->free_shipping_threshold;
+            }
+
+            // مزامنة نوع الاحتساب calculation_type مع type
+            if (empty($method->calculation_type)) {
+                $type = $method->attributes['type'] ?? 'flat_rate';
+                $method->calculation_type = match ($type) {
+                    'weight_based' => 'weight_based',
+                    'price_based'  => 'price_based',
+                    default        => 'flat',
+                };
+            }
+            if (empty($method->attributes['type'])) {
+                $method->attributes['type'] = match ($method->calculation_type) {
+                    'weight_based' => 'weight_based',
+                    default        => 'flat_rate',
+                };
+            }
+
+            // توليد كود فريد لطريقة الشحن إن لم يوجد
+            if (empty($method->code)) {
+                $base = \Illuminate\Support\Str::slug($method->name ?? 'shipping');
+                $method->code = ($base ?: 'shipping') . '-' . ($method->shipping_zone_id ?? 'zone') . '-' . uniqid();
+            }
+        });
+    }
 
     public function zone(): BelongsTo
     {
-        return $this->belongsTo(ShippingZone::class, 'zone_id');
+        return $this->belongsTo(ShippingZone::class, 'shipping_zone_id');
     }
 
     public function carrier(): BelongsTo
@@ -51,120 +99,81 @@ class ShippingMethod extends Model
         return $this->belongsTo(ShippingCompany::class, 'carrier_id');
     }
 
-    public function labels(): HasMany
-    {
-        return $this->hasMany(ShippingLabel::class, 'method_id');
-    }
-
     public function getTypeLabel(): string
     {
-        return match ($this->type) {
-            'flat_rate' => 'شحن ثابت',
+        $type = $this->type ?? $this->calculation_type;
+        return match ($type) {
+            'flat', 'flat_rate' => 'شحن ثابت',
             'free_shipping' => 'شحن مجاني',
             'weight_based' => 'حسب الوزن',
+            'price_based' => 'حسب السعر',
             'zone_based' => 'حسب المنطقة',
             'product_based' => 'حسب المنتج',
             'courier_api' => 'API شركة شحن',
-            default => $this->type,
+            default => $type ?? 'ثابت',
         };
     }
 
-    public function getTypeIcon(): string
+    public function getFlatRateAmountAttribute(): ?float
     {
-        return match ($this->type) {
-            'flat_rate' => 'fa-tag',
-            'free_shipping' => 'fa-gift',
-            'weight_based' => 'fa-weight-hanging',
-            'zone_based' => 'fa-map-marked-alt',
-            'product_based' => 'fa-box',
-            'courier_api' => 'fa-plug',
-            default => 'fa-truck',
-        };
+        return isset($this->attributes['flat_rate_amount'])
+            ? (float) $this->attributes['flat_rate_amount']
+            : (float) ($this->base_cost ?? 0);
     }
 
-    public function getTypeColor(): string
+    public function getFreeShippingMinAttribute(): ?float
     {
-        return match ($this->type) {
-            'flat_rate' => 'blue',
-            'free_shipping' => 'green',
-            'weight_based' => 'purple',
-            'zone_based' => 'orange',
-            'product_based' => 'indigo',
-            'courier_api' => 'teal',
-            default => 'gray',
-        };
+        return isset($this->attributes['free_shipping_min'])
+            ? (float) $this->attributes['free_shipping_min']
+            : ($this->free_shipping_threshold ? (float) $this->free_shipping_threshold : null);
     }
 
-    public function calculateCost(float $weight = 0, float $subtotal = 0, array $cartItems = [], ?Coupon $coupon = null): ?float
+    public function getEstimatedDaysAttribute(): ?string
     {
-        return match ($this->type) {
-            'flat_rate' => (float) $this->flat_rate_amount,
-            'free_shipping' => $this->qualifiesForFreeShipping($subtotal, $coupon) ? 0 : null,
-            'weight_based' => $this->calculateWeightCost($weight),
-            'product_based' => $this->calculateProductCost($cartItems),
-            'courier_api' => $this->getCourierQuote($weight, $cartItems),
-            'zone_based' => $this->calculateZoneRateCost(),
-            default => null,
-        };
+        if (isset($this->attributes['estimated_days']) && !empty($this->attributes['estimated_days'])) {
+            return $this->attributes['estimated_days'];
+        }
+        if ($this->min_delivery_days && $this->max_delivery_days) {
+            return "{$this->min_delivery_days}-{$this->max_delivery_days}";
+        }
+        return null;
     }
 
-    private function qualifiesForFreeShipping(float $subtotal, ?Coupon $coupon = null): bool
+    public function getTypeAttribute(): string
     {
-        return match ($this->free_shipping_requires) {
-            'min_amount' => $subtotal >= (float) $this->free_shipping_min,
-            'coupon' => $coupon !== null,
-            'both' => $subtotal >= (float) $this->free_shipping_min && $coupon !== null,
-            default => false,
-        };
+        return $this->attributes['type'] ?? ($this->calculation_type === 'weight_based' ? 'weight_based' : 'flat_rate');
     }
 
-    private function calculateWeightCost(float $weight): ?float
+    public function scopeActive($query)
     {
-        $ranges = $this->weight_ranges ?? [];
-        if (empty($ranges)) {
-            return null;
+        return $query->where(function ($q) {
+            $q->where('status', 'active')
+              ->orWhere('status', 1)
+              ->orWhere('status', '1')
+              ->orWhere('status', true);
+        });
+    }
+
+    /**
+     * احتساب تكلفة الشحن بدقة وصرامة — لا قيم افتراضية ضمنية،
+     * كل حالة غير معروفة بـ calculation_type تُرمى كخطأ إعداد بدل تخمين سعر.
+     */
+    public function calculateCost(float $subtotal, float $weightKg = 0): float
+    {
+        if ($this->free_shipping_threshold !== null && $subtotal >= (float) $this->free_shipping_threshold) {
+            return 0.0;
         }
 
-        usort($ranges, fn ($a, $b) => $a['max'] <=> $b['max']);
+        $cost = match ($this->calculation_type) {
+            'flat' => (float) $this->base_cost,
+            'weight_based' => (float) $this->base_cost + (max($weightKg, 0) * (float) $this->cost_per_kg),
+            'price_based' => (float) $this->base_cost,
+            default => throw new InvalidShippingConfigurationException(
+                "نوع احتساب شحن غير معروف: {$this->calculation_type} لطريقة الشحن #{$this->id}"
+            ),
+        };
 
-        foreach ($ranges as $range) {
-            if ($weight <= (float) ($range['max'] ?? 0)) {
-                return (float) ($range['cost'] ?? 0);
-            }
-        }
-
-        $lastRange = end($ranges);
-
-        return (float) ($lastRange['cost'] ?? 0);
-    }
-
-    private function calculateProductCost(array $cartItems): ?float
-    {
-        $productIds = $this->product_ids ?? [];
-        if (empty($productIds)) {
-            return null;
-        }
-
-        $total = 0;
-        foreach ($cartItems as $item) {
-            $itemId = is_array($item) ? ($item['product_id'] ?? 0) : $item;
-            if (in_array($itemId, $productIds)) {
-                $total += (float) ($this->flat_rate_amount ?? 0);
-            }
-        }
-
-        return $total > 0 ? $total : null;
-    }
-
-    private function getCourierQuote(float $weight, array $items): ?float
-    {
-        return (float) ($this->flat_rate_amount ?? 0);
-    }
-
-    private function calculateZoneRateCost(): ?float
-    {
-        $rates = $this->zone_rates ?? [];
-
-        return (float) ($rates['default'] ?? $this->flat_rate_amount ?? 0);
+        // لا نسمح بأي حال بتكلفة سالبة — قد تنتج عن إعداد خاطئ بالإدارة
+        return max($cost, 0.0);
     }
 }

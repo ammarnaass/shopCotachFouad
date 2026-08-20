@@ -141,9 +141,35 @@ class ShippingController extends Controller
 
     public function destroyZone(ShippingZone $zone): RedirectResponse
     {
+        if ($zone->isEverywhere()) {
+            return redirect()->route('admin.shipping.index', ['tab' => 'zones'])
+                ->with('error', 'لا يمكن حذف منطقة النظام المحجوزة (مواقع غير مغطاة بمناطقك الأخرى).');
+        }
+
         $zone->delete();
 
         return redirect()->route('admin.shipping.index', ['tab' => 'zones'])->with('success', 'تم حذف منطقة الشحن بنجاح');
+    }
+
+    public function reorderZones(Request $request): \Illuminate\Http\JsonResponse
+    {
+        $order = $request->input('order', $request->input('ids', []));
+        if (!is_array($order) || empty($order)) {
+            return response()->json(['success' => false, 'message' => 'الترتيب غير صالح'], 422);
+        }
+
+        \Illuminate\Support\Facades\DB::transaction(function () use ($order) {
+            foreach ($order as $index => $id) {
+                ShippingZone::where('id', $id)
+                    ->where('zone_type', 'standard')
+                    ->update(['sort_order' => $index + 1]);
+            }
+        });
+
+        return response()->json([
+            'success' => true,
+            'message' => 'تم حفظ ترتيب المناطق بنجاح',
+        ]);
     }
 
     // ============================================
@@ -155,15 +181,30 @@ class ShippingController extends Controller
         $carriers = ShippingCompany::where('status', 'active')->get();
         $products = Product::where('status', 'active')->select('id', 'name')->get();
 
+        $defaultZoneId = request('zone_id');
+
         return view('admin.shipping.method-form', [
-            'method' => null, 'zones' => $zones, 'carriers' => $carriers, 'products' => $products,
+            'method' => null, 'zones' => $zones, 'carriers' => $carriers, 'products' => $products, 'defaultZoneId' => $defaultZoneId,
         ]);
     }
 
     public function storeMethod(Request $request): RedirectResponse
     {
         $data = $this->validateMethod($request);
+        $data['shipping_zone_id'] = $data['zone_id'] ?? null;
+        $data['base_cost'] = (float) ($data['flat_rate_amount'] ?? $data['base_cost'] ?? 0);
+        $data['calculation_type'] = match ($data['type'] ?? 'flat_rate') {
+            'weight_based' => 'weight_based',
+            'price_based'  => 'price_based',
+            default        => 'flat',
+        };
+        $data['status'] = $request->has('status') ? (bool)$request->status : true;
+
         ShippingMethod::create($data);
+
+        if ($request->filled('return_to_zone')) {
+            return redirect()->route('admin.shipping.zone.edit', $request->input('return_to_zone'))->with('success', 'تم إضافة طريقة الشحن بنجاح');
+        }
 
         return redirect()->route('admin.shipping.index', ['tab' => 'methods'])->with('success', 'تم إضافة طريقة الشحن بنجاح');
     }
@@ -172,24 +213,59 @@ class ShippingController extends Controller
     {
         $zones = ShippingZone::where('status', 'active')->get();
         $carriers = ShippingCompany::where('status', 'active')->get();
-        $products = Product::where('status', 'active')->select('id', 'name')->get();
+        $productClass = class_exists(Product::class) ? Product::class : \App\Models\Catalog\Product::class;
+        $products = $productClass::where('status', 'active')->select('id', 'name')->get();
+        $defaultZoneId = $method->shipping_zone_id ?? $method->zone_id;
 
-        return view('admin.shipping.method-form', compact('method', 'zones', 'carriers', 'products'));
+        return view('admin.shipping.method-form', compact('method', 'zones', 'carriers', 'products', 'defaultZoneId'));
     }
 
     public function updateMethod(Request $request, ShippingMethod $method): RedirectResponse
     {
         $data = $this->validateMethod($request);
+        $data['shipping_zone_id'] = $data['zone_id'] ?? $method->shipping_zone_id;
+        if (isset($data['flat_rate_amount'])) {
+            $data['base_cost'] = (float) $data['flat_rate_amount'];
+        }
+        if (isset($data['type'])) {
+            $data['calculation_type'] = match ($data['type']) {
+                'weight_based' => 'weight_based',
+                'price_based'  => 'price_based',
+                default        => 'flat',
+            };
+        }
+
         $method->update($data);
 
+        if ($request->filled('return_to_zone')) {
+            return redirect()->route('admin.shipping.zone.edit', $request->input('return_to_zone'))->with('success', 'تم تحديث طريقة الشحن بنجاح');
+        }
+
         return redirect()->route('admin.shipping.index', ['tab' => 'methods'])->with('success', 'تم تحديث طريقة الشحن بنجاح');
+    }
+
+    public function toggleMethodStatus(ShippingMethod $method): \Illuminate\Http\JsonResponse|RedirectResponse
+    {
+        $currentStatus = ($method->status == 1 || $method->status === 'active' || $method->status === true);
+        $newStatus = $currentStatus ? 0 : 1;
+        $method->update(['status' => $newStatus]);
+
+        if (request()->wantsJson() || request()->ajax()) {
+            return response()->json([
+                'success' => true,
+                'status'  => $newStatus,
+                'message' => $newStatus ? 'تم تفعيل طريقة الشحن بنجاح' : 'تم إخفاء/تعطيل طريقة الشحن بنجاح',
+            ]);
+        }
+
+        return redirect()->back()->with('success', $newStatus ? 'تم تفعيل طريقة الشحن بنجاح' : 'تم إخفاء/تعطيل طريقة الشحن بنجاح');
     }
 
     public function destroyMethod(ShippingMethod $method): RedirectResponse
     {
         $method->delete();
 
-        return redirect()->route('admin.shipping.index', ['tab' => 'methods'])->with('success', 'تم حذف طريقة الشحن بنجاح');
+        return redirect()->back()->with('success', 'تم حذف طريقة الشحن بنجاح');
     }
 
     // Quick add method to a zone (from zone card)
@@ -205,9 +281,17 @@ class ShippingController extends Controller
             'name.required' => 'اسم طريقة الشحن مطلوب',
         ]);
 
+        $data['shipping_zone_id'] = $zone->id;
         $data['zone_id'] = $zone->id;
+        $data['base_cost'] = (float) ($data['flat_rate_amount'] ?? 0);
+        $data['calculation_type'] = match ($data['type']) {
+            'weight_based' => 'weight_based',
+            'price_based'  => 'price_based',
+            default        => 'flat',
+        };
         $data['status'] = true;
         $data['sort_order'] = $request->input('sort_order', 0);
+        $data['method_order'] = $request->input('method_order', 0);
 
         ShippingMethod::create($data);
 
@@ -481,7 +565,7 @@ class ShippingController extends Controller
 
     private function validateZone(Request $request): array
     {
-        return $request->validate([
+        $validated = $request->validate([
             'company_id' => 'nullable|exists:shipping_companies,id',
             'name' => 'required|string|max:100',
             'description' => 'nullable|string',
@@ -489,7 +573,7 @@ class ShippingController extends Controller
             'states' => 'nullable|array',
             'cities' => 'nullable|array',
             'delivery_type' => 'required|in:home,office,both',
-            'cost' => 'required|numeric|min:0',
+            'cost' => 'nullable|numeric|min:0',
             'express_cost' => 'nullable|numeric|min:0',
             'home_cost' => 'nullable|numeric|min:0',
             'home_express_cost' => 'nullable|numeric|min:0',
@@ -505,9 +589,14 @@ class ShippingController extends Controller
             'status' => 'required|in:active,inactive',
         ], [
             'name.required' => 'اسم المنطقة مطلوب',
-            'cost.required' => 'تكلفة الشحن مطلوبة',
-            'cost.numeric' => 'تكلفة الشحن يجب أن تكون رقم',
         ]);
+
+        $validated['cost'] = (float)($validated['cost'] ?? $validated['home_cost'] ?? $validated['office_cost'] ?? 0);
+        if (isset($validated['home_express_cost']) || isset($validated['office_express_cost'])) {
+            $validated['express_cost'] = (float)($validated['express_cost'] ?? $validated['home_express_cost'] ?? $validated['office_express_cost'] ?? 0);
+        }
+
+        return $validated;
     }
 
     private function validateMethod(Request $request): array

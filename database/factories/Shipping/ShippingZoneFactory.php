@@ -5,6 +5,11 @@ namespace Database\Factories\Shipping;
 use App\Modules\Shipping\Models\ShippingZone;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
+/**
+ * Factory مُحدَّثة للإصدار الجديد من ShippingZone.
+ * الحقول القديمة (cost, express_cost, delivery_type, priority...) محذوفة —
+ * الآن التسعير يُدار من ShippingMethod المرتبطة بكل منطقة.
+ */
 class ShippingZoneFactory extends Factory
 {
     protected $model = ShippingZone::class;
@@ -13,28 +18,21 @@ class ShippingZoneFactory extends Factory
     {
         return [
             'name'                   => $this->faker->words(3, true),
-            'description'            => null,
-            'countries'              => ['*'],
-            'cities'                 => ['*'],
-            'delivery_type'          => 'both',
-            'cost'                   => $this->faker->randomFloat(2, 100, 1000),
-            'express_cost'           => $this->faker->randomFloat(2, 200, 2000),
-            'home_cost'              => null,
-            'home_express_cost'      => null,
-            'office_cost'            => null,
-            'office_express_cost'    => null,
-            'cost_per_kg'            => null,
-            'free_threshold'         => null,
-            'estimated_days_standard'=> '3-5',
-            'estimated_days_express' => '1-2',
+            'shipping_company_id'    => null,
+            // أكواد ISO alpha-2 دائمًا — يُطبَّع تلقائيًا Uppercase عند الحفظ (ShippingZone::booted)
+            'countries'              => ['DZ'],
+            'states'                 => null,
+            'cities'                 => null,
             'is_default'             => false,
-            'priority'               => 10,
-            'sort_order'             => 0,
             'status'                 => 'active',
+            'sort_order'             => 0,
+            // حقل قديم موجود بالـ schema — مطلوب بالاختبارات (NOT NULL constraint)
+            // الكود الجديد لا يستخدمه (ShippingZoneMatcher يعتمد countries/cities/states)
+            'regions'                => [],
         ];
     }
 
-    /** منطقة افتراضية */
+    /** منطقة افتراضية — خط الدفاع الأخير */
     public function asDefault(): static
     {
         return $this->state(['is_default' => true]);
@@ -44,5 +42,21 @@ class ShippingZoneFactory extends Factory
     public function inactive(): static
     {
         return $this->state(['status' => 'inactive']);
+    }
+
+    /** منطقة تغطي دولة بعينها */
+    public function forCountry(string ...$codes): static
+    {
+        return $this->state([
+            'countries' => array_map('strtoupper', $codes),
+        ]);
+    }
+
+    /** منطقة بمدن محددة */
+    public function forCities(string ...$cities): static
+    {
+        return $this->state([
+            'cities' => array_map('mb_strtolower', $cities),
+        ]);
     }
 }

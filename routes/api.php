@@ -17,7 +17,7 @@ Route::post('/auth/login', [AuthApiController::class, 'login']);
 Route::get('/products', [ProductApiController::class, 'index']);
 Route::get('/products/{slug}', [ProductApiController::class, 'show']);
 Route::get('/shipping/zones', [ShippingApiController::class, 'zones']);
-Route::post('/shipping/calculate', [ShippingApiController::class, 'calculate']);
+Route::post('/shipping/calculate', [\App\Modules\Shipping\Http\Controllers\Api\ShippingCalculationController::class, 'calculate'])->name('api.shipping.calculate');
 Route::get('/shipping/tracking/{number}', [ShippingApiController::class, 'track']);
 Route::post('/coupons/validate', [CouponApiController::class, 'validate']);
 Route::post('/shipping/available', [ShippingApiController::class, 'available']);

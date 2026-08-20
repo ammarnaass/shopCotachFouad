@@ -76,12 +76,7 @@ class OrderService
             ->first();
 
         if ($fallbackZone) {
-            Log::warning('shipping.using_default_zone_fallback', [
-                'city'    => $city,
-                'zone_id' => $fallbackZone->id,
-            ]);
-
-            return $fallbackZone->calculateCost(
+            $cost = $fallbackZone->calculateCost(
                 $city,
                 $countryCode ?? '',
                 $method,
@@ -90,6 +85,13 @@ class OrderService
                 $weight,
                 $stateName
             );
+
+            Log::warning('shipping.using_default_zone_fallback', [
+                'city'    => $city,
+                'zone_id' => $fallbackZone->id,
+            ]);
+
+            return $cost;
         }
 
         // ولا حتى منطقة افتراضية → امنع الطلب، لا تُرجع صفرًا أبدًا

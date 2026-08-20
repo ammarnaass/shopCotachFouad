@@ -15,19 +15,34 @@
 
 {{-- Header Actions --}}
 <div class="flex items-center justify-between mb-8">
+    @php
+        $returnZoneId = request('return_to_zone', $defaultZoneId ?? null);
+        $backUrl = $returnZoneId ? route('admin.shipping.zone.edit', $returnZoneId) : route('admin.shipping.index', ['tab' => 'methods']);
+        $currentSelectedZoneId = old('zone_id', $method?->shipping_zone_id ?? $method?->zone_id ?? $defaultZoneId ?? request('zone_id'));
+        $currentSelectedZone = $zones->firstWhere('id', $currentSelectedZoneId);
+    @endphp
     <div>
         <h1 class="text-[32px] font-bold text-on-surface leading-10">{{ $method ? __t('admin.shipping.method_edit_title') : __t('admin.shipping.method_add_title') }}</h1>
         <p class="text-on-surface-variant text-sm mt-1.5">{{ $method ? __t('admin.shipping.method_edit_description') : __t('admin.shipping.method_add_description') }}</p>
+        @if($currentSelectedZone)
+            <div class="inline-flex items-center gap-1.5 px-3 py-1 bg-primary/10 text-primary border border-primary/20 rounded-lg text-xs font-bold mt-2">
+                <span class="material-symbols-outlined text-sm">location_on</span>
+                <span>المنطقة / الولاية التابعة لها: {{ $currentSelectedZone->name }}</span>
+            </div>
+        @endif
     </div>
-    <a href="{{ route('admin.shipping.index', ['tab' => 'methods']) }}" class="flex items-center gap-2 text-primary font-bold hover:underline transition-all">
+    <a href="{{ $backUrl }}" class="flex items-center gap-2 text-primary font-bold hover:underline transition-all">
         <span class="material-symbols-outlined">arrow_back</span>
-        <span>{{ __t('admin.shipping.back_to_list') }}</span>
+        <span>{{ $returnZoneId ? 'الرجوع لمنطقة الشحن' : __t('admin.shipping.back_to_list') }}</span>
     </a>
 </div>
 
 <form action="{{ $method ? route('admin.shipping.method.update', $method) : route('admin.shipping.method.store') }}" method="POST">
     @csrf
     @if($method) @method('PUT') @endif
+    @if($returnZoneId)
+        <input type="hidden" name="return_to_zone" value="{{ $returnZoneId }}">
+    @endif
 
     @php
         $ranges = old('weight_ranges', $method?->weight_ranges ?? []);
@@ -78,8 +93,14 @@
                     <label class="block text-sm font-semibold text-on-surface-variant">{{ __t('admin.shipping.zone') }} *</label>
                     <div class="relative">
                         <select name="zone_id" class="form-select @error('zone_id') form-input-error @enderror" required>
-                            @foreach($zones as $zone)
-                                <option value="{{ $zone->id }}" {{ old('zone_id', $method?->zone_id) == $zone->id ? 'selected' : '' }}>{{ $zone->name }}</option>
+                            <option value="">— اختر منطقة الشحن / الولاية —</option>
+                            @foreach($zones as $z)
+                                @php
+                                    $selectedZoneVal = (string)old('zone_id', $method?->shipping_zone_id ?? $method?->zone_id ?? $defaultZoneId ?? request('zone_id', ''));
+                                @endphp
+                                <option value="{{ $z->id }}" {{ $selectedZoneVal === (string)$z->id ? 'selected' : '' }}>
+                                    {{ $z->name }}
+                                </option>
                             @endforeach
                         </select>
                     </div>
@@ -285,7 +306,7 @@
 
         {{-- Form Footer Actions --}}
         <div class="p-6 bg-surface-container-low border-t border-outline-variant flex items-center justify-between gap-4">
-            <a href="{{ route('admin.shipping.index', ['tab' => 'methods']) }}" class="px-6 py-3 rounded-lg border border-outline text-on-surface-variant hover:bg-surface-container-high transition-all font-bold text-sm">
+            <a href="{{ $backUrl }}" class="px-6 py-3 rounded-lg border border-outline text-on-surface-variant hover:bg-surface-container-high transition-all font-bold text-sm">
                 إلغاء
             </a>
             <button type="submit" class="bg-primary text-white px-8 py-3 rounded-lg flex items-center gap-2 hover:bg-primary-container transition-all shadow-sm active:scale-95 font-bold text-sm">

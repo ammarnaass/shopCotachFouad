@@ -260,6 +260,7 @@ Route::prefix('{locale?}')->whereIn('locale', ['ar', 'en', 'fr'])->middleware('l
         // Zones
         Route::get('/shipping/zones/create', [ShippingController::class, 'createZone'])->name('shipping.zone.create');
         Route::post('/shipping/zones', [ShippingController::class, 'storeZone'])->name('shipping.zone.store');
+        Route::post('/shipping/zones/reorder', [ShippingController::class, 'reorderZones'])->name('shipping.zone.reorder');
         Route::get('/shipping/zones/{zone}/edit', [ShippingController::class, 'editZone'])->name('shipping.zone.edit');
         Route::put('/shipping/zones/{zone}', [ShippingController::class, 'updateZone'])->name('shipping.zone.update');
         Route::delete('/shipping/zones/{zone}', [ShippingController::class, 'destroyZone'])->name('shipping.zone.destroy');
@@ -269,6 +270,7 @@ Route::prefix('{locale?}')->whereIn('locale', ['ar', 'en', 'fr'])->middleware('l
         Route::get('/shipping/methods/{method}/edit', [ShippingController::class, 'editMethod'])->name('shipping.method.edit');
         Route::put('/shipping/methods/{method}', [ShippingController::class, 'updateMethod'])->name('shipping.method.update');
         Route::delete('/shipping/methods/{method}', [ShippingController::class, 'destroyMethod'])->name('shipping.method.destroy');
+        Route::post('/shipping/methods/{method}/toggle', [ShippingController::class, 'toggleMethodStatus'])->name('shipping.method.toggle');
         Route::post('/shipping/zones/{zone}/methods', [ShippingController::class, 'storeMethodForZone'])->name('shipping.zone.method.store');
         // Labels (Waybills)
         Route::get('/shipping/labels/create', [ShippingController::class, 'createLabel'])->name('shipping.label.create');

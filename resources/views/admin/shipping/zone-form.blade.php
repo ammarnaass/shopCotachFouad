@@ -125,19 +125,24 @@
                 <div class="space-y-3">
                     <div class="flex items-center justify-between">
                         <label class="font-label-md text-label-md text-on-surface-variant block">{{ __t('admin.shipping.included_countries') }} <span class="text-error">*</span></label>
-                        <span class="text-[11px] text-primary cursor-pointer hover:underline">{{ __t('admin.shipping.select_all') }}</span>
+                        <span class="text-[11px] text-primary cursor-pointer hover:underline" onclick="selectAllCountries()">{{ __t('admin.shipping.select_all') }}</span>
                     </div>
+                    @php
+                        $selectedCountries = old('countries', $zone->countries ?? ['DZ']);
+                        if (!is_array($selectedCountries)) $selectedCountries = [$selectedCountries];
+                    @endphp
                     <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
-                        <label class="flex items-center gap-3 p-3 rounded-xl border border-outline-variant cursor-pointer transition-all hover:bg-surface-container-high {{ in_array('*', old('countries', $zone->countries ?? ['DZ'])) ? 'border-primary bg-primary/5' : '' }}">
-                            <input type="checkbox" name="countries[]" value="*" {{ in_array('*', old('countries', $zone->countries ?? ['DZ'])) ? 'checked' : '' }} class="w-5 h-5 rounded text-primary border-outline-variant focus:ring-primary transition-all">
-                                <span class="flex items-center gap-2 font-label-md text-label-md">
+                        <label class="flex items-center gap-3 p-3 rounded-xl border border-outline-variant cursor-pointer transition-all hover:bg-surface-container-high {{ in_array('*', $selectedCountries) ? 'border-primary bg-primary/5' : '' }}">
+                            <input type="checkbox" name="countries[]" value="*" {{ in_array('*', $selectedCountries) ? 'checked' : '' }} class="w-5 h-5 rounded text-primary border-outline-variant focus:ring-primary transition-all">
+                            <span class="flex items-center gap-2 font-label-md text-label-md">
                                 <span class="material-symbols-outlined text-primary text-lg">language</span>
                                 {{ __t('admin.shipping.all_countries') }}
                             </span>
                         </label>
                         @foreach($countries as $code => $info)
-                            <label class="flex items-center gap-3 p-3 rounded-xl border border-outline-variant cursor-pointer transition-all hover:bg-surface-container-high country-card {{ in_array($code, old('countries', $zone->countries ?? ['DZ'])) ? 'border-primary bg-primary/5' : '' }}">
-                                <input type="checkbox" name="countries[]" value="{{ $code }}" {{ in_array($code, old('countries', $zone->countries ?? ['DZ'])) ? 'checked' : '' }} class="w-5 h-5 rounded text-primary border-outline-variant focus:ring-primary transition-all country-toggle" data-country="{{ $code }}">
+                            @php $isCountryChecked = in_array($code, $selectedCountries) || in_array('*', $selectedCountries); @endphp
+                            <label class="flex items-center gap-3 p-3 rounded-xl border border-outline-variant cursor-pointer transition-all hover:bg-surface-container-high country-card {{ $isCountryChecked ? 'border-primary bg-primary/5' : '' }}">
+                                <input type="checkbox" name="countries[]" value="{{ $code }}" {{ $isCountryChecked ? 'checked' : '' }} class="w-5 h-5 rounded text-primary border-outline-variant focus:ring-primary transition-all country-toggle" data-country="{{ $code }}">
                                 <span class="flex items-center gap-2 font-label-md text-label-md">
                                     <span class="text-xl">{{ $info['flag'] ?? '' }}</span>
                                     {{ $info['name'] }}
@@ -150,23 +155,80 @@
                 <!-- Cities / States -->
                 <div id="states-container" class="space-y-3">
                     <label class="font-label-md text-label-md text-on-surface-variant block">الولاية / المحافظة <span class="text-error">*</span></label>
-                    @php $selectedCountries = old('countries', $zone->countries ?? ['DZ']); @endphp
+                    @php
+                        // تجميع كل المدن والمواقع المحددة مسبقًا بدقة
+                        $assignedLocations = [];
+                        if ($zone) {
+                            if (is_array($zone->cities)) {
+                                foreach ($zone->cities as $k => $v) {
+                                    if (is_array($v)) {
+                                        foreach ($v as $sub) $assignedLocations[] = (string)$sub;
+                                    } else {
+                                        $assignedLocations[] = (string)$v;
+                                    }
+                                }
+                            }
+                            if (is_array($zone->states)) {
+                                foreach ($zone->states as $s) $assignedLocations[] = (string)$s;
+                            }
+                            if (is_array($zone->regions)) {
+                                foreach ($zone->regions as $r) $assignedLocations[] = (string)$r;
+                            }
+                            if ($zone->locations) {
+                                foreach ($zone->locations as $loc) {
+                                    $assignedLocations[] = (string)$loc->value;
+                                    if (str_contains($loc->value, ':')) {
+                                        $parts = explode(':', $loc->value);
+                                        $assignedLocations[] = (string)end($parts);
+                                    }
+                                }
+                            }
+                        }
+                        $assignedLocations = array_unique(array_map('trim', $assignedLocations));
+                        $assignedLocationsLower = array_map('mb_strtolower', $assignedLocations);
+                    @endphp
+
                     @foreach($countries as $code => $info)
-                        @if(in_array($code, $selectedCountries) || (in_array('*', $selectedCountries)))
+                        @if(in_array($code, $selectedCountries) || in_array('*', $selectedCountries))
                             <div class="country-states border border-outline-variant rounded-xl p-4 bg-surface-container-low/30 {{ in_array('*', $selectedCountries) && !in_array($code, $selectedCountries) ? 'hidden' : '' }}" data-country="{{ $code }}">
-                                <div class="flex items-center gap-2 mb-3">
-                                    <span class="font-label-md text-label-md font-bold text-on-surface">{{ $info['name'] }}</span>
-                                    <span class="text-xs text-outline">({{ $code }})</span>
+                                <div class="flex items-center justify-between mb-3">
+                                    <div class="flex items-center gap-2">
+                                        <span class="font-label-md text-label-md font-bold text-on-surface">{{ $info['name'] }}</span>
+                                        <span class="text-xs text-outline">({{ $code }})</span>
+                                    </div>
+                                    <button type="button" class="text-xs text-primary font-bold hover:underline" onclick="toggleAllCountryStates('{{ $code }}')">
+                                        تحديد / إلغاء تحديد الكل
+                                    </button>
                                 </div>
-                                <div class="grid grid-cols-2 md:grid-cols-3 gap-y-3 gap-x-6 max-h-48 overflow-y-auto p-3 bg-surface-container-low rounded-xl border border-outline-variant/50">
-                                    <label class="flex items-center gap-3 cursor-pointer group">
-                                        <input type="checkbox" name="cities[{{ $code }}][]" value="*" {{ in_array('*', old("cities.$code", $zone->cities[$code] ?? [])) ? 'checked' : '' }} class="w-5 h-5 rounded text-primary border-outline focus:ring-primary transition-all">
-                                        <span class="font-body-sm text-body-sm font-semibold text-primary group-hover:text-primary">{{ __t('admin.shipping.all_cities') }}</span>
+                                <div class="grid grid-cols-2 md:grid-cols-3 gap-y-3 gap-x-6 max-h-56 overflow-y-auto p-3 bg-surface-container-low rounded-xl border border-outline-variant/50" id="states-list-{{ $code }}">
+                                    @php
+                                        $oldForCountry = old("cities.$code");
+                                        $isAllCitiesChecked = $oldForCountry !== null
+                                            ? in_array('*', (array)$oldForCountry)
+                                            : in_array('*', $assignedLocations);
+                                    @endphp
+                                    <label class="flex items-center gap-3 cursor-pointer group col-span-2 md:col-span-3 border-b border-outline-variant/30 pb-2 mb-1">
+                                        <input type="checkbox" name="cities[{{ $code }}][]" value="*" {{ $isAllCitiesChecked ? 'checked' : '' }} class="w-5 h-5 rounded text-primary border-outline focus:ring-primary transition-all select-all-states">
+                                        <span class="font-body-sm text-body-sm font-bold text-primary group-hover:text-primary">{{ __t('admin.shipping.all_cities') }} (كل ولايات الدولة)</span>
                                     </label>
                                     @foreach($info['states'] ?? [] as $stateCode => $stateName)
-                                        <label class="flex items-center gap-3 cursor-pointer group">
-                                            <input type="checkbox" name="cities[{{ $code }}][]" value="{{ $stateName }}" {{ in_array($stateName, old("cities.$code", $zone->cities[$code] ?? [])) ? 'checked' : '' }} class="w-5 h-5 rounded text-primary border-outline focus:ring-primary transition-all">
-                                            <span class="font-body-sm text-body-sm group-hover:text-primary {{ !in_array($stateName, old("cities.$code", $zone->cities[$code] ?? [])) ? 'text-outline' : '' }}">{{ $stateName }}</span>
+                                        @php
+                                            $isChecked = false;
+                                            if ($oldForCountry !== null) {
+                                                $isChecked = in_array('*', (array)$oldForCountry)
+                                                    || in_array((string)$stateName, (array)$oldForCountry)
+                                                    || in_array((string)$stateCode, (array)$oldForCountry);
+                                            } else {
+                                                $isChecked = in_array('*', $assignedLocations)
+                                                    || in_array((string)$stateCode, $assignedLocations)
+                                                    || in_array((string)$stateName, $assignedLocations)
+                                                    || in_array(mb_strtolower((string)$stateName), $assignedLocationsLower)
+                                                    || in_array("{$code}:{$stateCode}", $assignedLocations);
+                                            }
+                                        @endphp
+                                        <label class="flex items-center gap-3 cursor-pointer group state-item">
+                                            <input type="checkbox" name="cities[{{ $code }}][]" value="{{ $stateCode }}" data-state-name="{{ $stateName }}" {{ $isChecked ? 'checked' : '' }} class="w-5 h-5 rounded text-primary border-outline focus:ring-primary transition-all state-checkbox">
+                                            <span class="font-body-sm text-body-sm group-hover:text-primary {{ !$isChecked ? 'text-outline' : 'font-semibold text-on-surface' }}">{{ $stateCode }} - {{ $stateName }}</span>
                                         </label>
                                     @endforeach
                                 </div>
@@ -178,141 +240,6 @@
                     <span class="material-symbols-outlined text-[14px]">info</span>
                     {{ __t('admin.shipping.cities_hint') }}
                 </p>
-            </div>
-
-            <hr class="border-outline-variant/30">
-
-            <!-- Shipping Costs -->
-            <div class="space-y-6">
-                <h3 class="font-title-lg text-title-lg font-bold text-on-surface flex items-center gap-2">
-                    <span class="material-symbols-outlined text-primary">payments</span>
-                    {{ __t('admin.shipping.shipping_cost') }}
-                </h3>
-                <p class="text-[11px] text-outline flex items-center gap-2 p-3 bg-primary-fixed/10 border border-outline-variant rounded-lg">
-                    <span class="material-symbols-outlined text-primary text-[14px]">info</span>
-                    {{ __t('admin.shipping.cost_hint') }}
-                </p>
-
-                <!-- General costs -->
-                <div class="space-y-3">
-                    <h4 class="font-label-md text-label-md font-bold text-on-surface">{{ __t('admin.shipping.general_cost') }}</h4>
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-stack-lg">
-                        <div class="space-y-2">
-                            <label class="font-label-md text-label-md text-on-surface-variant block">{{ __t('admin.shipping.standard') }}</label>
-                            <div class="relative">
-                                <input type="number" name="cost" value="{{ old('cost', $zone->cost ?? 0) }}" min="0" step="0.01"
-                                       class="w-full bg-surface-container-lowest border border-outline-variant rounded-lg p-3 font-body-md focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all pl-12">
-                                <span class="absolute left-3 top-1/2 -translate-y-1/2 text-outline text-sm">{{ currentCurrencySymbol() }}</span>
-                            </div>
-                        </div>
-                        <div class="space-y-2">
-                            <label class="font-label-md text-label-md text-on-surface-variant block">{{ __t('admin.shipping.express') }}</label>
-                            <div class="relative">
-                                <input type="number" name="express_cost" value="{{ old('express_cost', $zone->express_cost ?? '') }}" min="0" step="0.01"
-                                       class="w-full bg-surface-container-lowest border border-outline-variant rounded-lg p-3 font-body-md focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all pl-12">
-                                <span class="absolute left-3 top-1/2 -translate-y-1/2 text-outline text-sm">{{ currentCurrencySymbol() }}</span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Home delivery -->
-                <div class="p-4 bg-tertiary-fixed/10 rounded-xl border border-tertiary-fixed-dim space-y-3">
-                    <h4 class="font-label-md text-label-md font-bold text-on-surface flex items-center gap-2">
-                        <span class="material-symbols-outlined text-primary">home</span>
-                        {{ __t('admin.shipping.home_delivery') }}
-                    </h4>
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-stack-lg">
-                        <div class="space-y-2">
-                            <label class="font-label-md text-label-md text-on-surface-variant block">{{ __t('admin.shipping.normal_cost') }}</label>
-                            <div class="relative">
-                                <input type="number" name="home_cost" value="{{ old('home_cost', $zone->home_cost ?? '') }}" min="0" step="0.01" placeholder="اتركه فارغ لاستخدام التكلفة العامة"
-                                       class="w-full bg-surface-container-lowest border border-outline-variant rounded-lg p-3 font-body-md focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all pl-12">
-                                <span class="absolute left-3 top-1/2 -translate-y-1/2 text-outline text-sm">{{ currentCurrencySymbol() }}</span>
-                            </div>
-                        </div>
-                        <div class="space-y-2">
-                            <label class="font-label-md text-label-md text-on-surface-variant block">{{ __t('admin.shipping.express_cost') }}</label>
-                            <div class="relative">
-                                <input type="number" name="home_express_cost" value="{{ old('home_express_cost', $zone->home_express_cost ?? '') }}" min="0" step="0.01" placeholder="اتركه فارغ لاستخدام التكلفة العامة"
-                                       class="w-full bg-surface-container-lowest border border-outline-variant rounded-lg p-3 font-body-md focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all pl-12">
-                                <span class="absolute left-3 top-1/2 -translate-y-1/2 text-outline text-sm">{{ currentCurrencySymbol() }}</span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Office pickup -->
-                <div class="p-4 bg-secondary-fixed/30 rounded-xl border border-secondary-fixed-dim space-y-3">
-                    <h4 class="font-label-md text-label-md font-bold text-on-surface flex items-center gap-2">
-                        <span class="material-symbols-outlined text-primary">business</span>
-                        {{ __t('admin.shipping.office_pickup') }}
-                    </h4>
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-stack-lg">
-                        <div class="space-y-2">
-                            <label class="font-label-md text-label-md text-on-surface-variant block">عادي (تكلفة خاصة)</label>
-                            <div class="relative">
-                                <input type="number" name="office_cost" value="{{ old('office_cost', $zone->office_cost ?? '') }}" min="0" step="0.01" placeholder="اتركه فارغ لاستخدام التكلفة العامة"
-                                       class="w-full bg-surface-container-lowest border border-outline-variant rounded-lg p-3 font-body-md focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all pl-12">
-                                <span class="absolute left-3 top-1/2 -translate-y-1/2 text-outline text-sm">{{ currentCurrencySymbol() }}</span>
-                            </div>
-                        </div>
-                        <div class="space-y-2">
-                            <label class="font-label-md text-label-md text-on-surface-variant block">{{ __t('admin.shipping.express_cost') }}</label>
-                            <div class="relative">
-                                <input type="number" name="office_express_cost" value="{{ old('office_express_cost', $zone->office_express_cost ?? '') }}" min="0" step="0.01" placeholder="اتركه فارغ لاستخدام التكلفة العامة"
-                                       class="w-full bg-surface-container-lowest border border-outline-variant rounded-lg p-3 font-body-md focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all pl-12">
-                                <span class="absolute left-3 top-1/2 -translate-y-1/2 text-outline text-sm">{{ currentCurrencySymbol() }}</span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Weight-based + threshold -->
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-stack-lg">
-                    <div class="space-y-2">
-                        <label class="font-label-md text-label-md text-on-surface-variant block">{{ __t('admin.shipping.cost_per_kg') }}</label>
-                        <div class="relative">
-                            <input type="number" name="cost_per_kg" value="{{ old('cost_per_kg', $zone->cost_per_kg ?? '') }}" min="0" step="0.01"
-                                   class="w-full bg-surface-container-lowest border border-outline-variant rounded-lg p-3 font-body-md focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all pl-16">
-                            <span class="absolute left-3 top-1/2 -translate-y-1/2 text-outline text-sm">{{ currentCurrencySymbol() }} / كجم</span>
-                        </div>
-                        <p class="text-[11px] text-outline">{{ __t('admin.shipping.cost_per_kg_hint') }}</p>
-                    </div>
-                    <div class="space-y-2">
-                        <label class="font-label-md text-label-md text-on-surface-variant block">{{ __t('admin.shipping.free_threshold') }}</label>
-                        <div class="relative">
-                            <input type="number" name="free_threshold" value="{{ old('free_threshold', $zone->free_threshold ?? '') }}" min="0" step="0.01"
-                                   class="w-full bg-surface-container-lowest border border-outline-variant rounded-lg p-3 font-body-md focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all pl-12">
-                            <span class="absolute left-3 top-1/2 -translate-y-1/2 text-outline text-sm">{{ currentCurrencySymbol() }}</span>
-                        </div>
-                        <p class="text-[11px] text-outline">{{ __t('admin.shipping.free_threshold_hint') }}</p>
-                    </div>
-                </div>
-            </div>
-
-            <hr class="border-outline-variant/30">
-
-            <!-- Estimated Delivery Times -->
-            <div class="space-y-4">
-                <h3 class="font-title-lg text-title-lg font-bold text-on-surface flex items-center gap-2">
-                    <span class="material-symbols-outlined text-primary">schedule</span>
-                    {{ __t('admin.shipping.delivery_time_title') }}
-                </h3>
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-stack-lg">
-                    <div class="space-y-2">
-                        <label class="font-label-md text-label-md text-on-surface-variant block">{{ __t('admin.shipping.estimated_standard') }}</label>
-                        <input type="text" name="estimated_days_standard" value="{{ old('estimated_days_standard', $zone->estimated_days_standard ?? '3-5 أيام') }}"
-                               placeholder="مثل: 3-5 أيام"
-                               class="w-full bg-surface-container-lowest border border-outline-variant rounded-lg p-3 font-body-md focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all">
-                    </div>
-                    <div class="space-y-2">
-                        <label class="font-label-md text-label-md text-on-surface-variant block">{{ __t('admin.shipping.estimated_express') }}</label>
-                        <input type="text" name="estimated_days_express" value="{{ old('estimated_days_express', $zone->estimated_days_express ?? '1-2 يوم') }}"
-                               placeholder="مثل: 1-2 يوم"
-                               class="w-full bg-surface-container-lowest border border-outline-variant rounded-lg p-3 font-body-md focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all">
-                    </div>
-                </div>
             </div>
 
             <hr class="border-outline-variant/30">
@@ -335,20 +262,93 @@
                 </label>
             </div>
 
+            @if($zone)
+            <hr class="border-outline-variant/30">
+
+            <!-- Zone Shipping Methods Preview & Management -->
+            <div class="space-y-4">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <h3 class="font-title-lg text-title-lg font-bold text-on-surface flex items-center gap-2">
+                            <span class="material-symbols-outlined text-primary">local_shipping</span>
+                            طرق الشحن التابعة لهذه المنطقة
+                        </h3>
+                        <p class="text-xs text-outline mt-0.5">يتم تحديث طرق الشحن تلقائيًا بناءً على الأسعار المدخلة أعلاه، ويمكنك أيضًا إضافة طرق مخصصة.</p>
+                    </div>
+                    <a href="{{ route('admin.shipping.method.create') }}?zone_id={{ $zone->id }}&return_to_zone={{ $zone->id }}" class="px-4 py-2 bg-primary-fixed text-on-primary-fixed-variant rounded-lg text-xs font-bold hover:bg-primary hover:text-white transition-all flex items-center gap-1">
+                        <span class="material-symbols-outlined text-sm">add</span>
+                        إضافة طريقة شحن مخصصة
+                    </a>
+                </div>
+
+                <div class="grid grid-cols-1 gap-3">
+                    @forelse($zone->methods as $m)
+                        <div class="flex flex-col sm:flex-row sm:items-center justify-between p-4 bg-surface-container-low rounded-xl border border-outline-variant/60 hover:border-primary transition-all gap-4">
+                            <div class="flex items-center gap-3">
+                                <div class="w-10 h-10 rounded-full bg-primary-fixed flex items-center justify-center text-primary shrink-0">
+                                    <span class="material-symbols-outlined">local_shipping</span>
+                                </div>
+                                <div>
+                                    <div class="flex items-center gap-2">
+                                        <span class="font-bold text-on-surface text-sm">{{ $m->name }}</span>
+                                        <span class="bg-primary/10 text-primary text-[10px] font-bold px-2 py-0.5 rounded">{{ $m->getTypeLabel() }}</span>
+                                    </div>
+                                    <p class="text-xs text-outline mt-0.5">
+                                        وقت التوصيل: {{ $m->estimated_days ?: 'غير محدد' }}
+                                        @if($m->free_shipping_threshold)
+                                            • مجاني فوق {{ number_format($m->free_shipping_threshold, 0) }} د.ج
+                                        @endif
+                                    </p>
+                                </div>
+                            </div>
+                            <div class="flex items-center gap-3 self-end sm:self-center">
+                                <span class="font-bold text-primary text-base">{{ number_format($m->base_cost, 2) }} {{ currentCurrencySymbol() }}</span>
+                                
+                                <!-- زر تفعيل / إخفاء طريقة الشحن -->
+                                <form action="{{ route('admin.shipping.method.toggle', $m) }}" method="POST" class="inline">
+                                    @csrf
+                                    <button type="submit" class="text-xs px-2.5 py-1 rounded-full font-bold transition-all hover:opacity-80 flex items-center gap-1.5 {{ $m->status ? 'bg-emerald-100 text-emerald-800 border border-emerald-300' : 'bg-gray-200 text-gray-600 border border-gray-300' }}" title="{{ $m->status ? 'انقر لإخفاء وتعطيل هذه الطريقة' : 'انقر لتفعيل وإظهار هذه الطريقة' }}">
+                                        <span class="w-2 h-2 rounded-full {{ $m->status ? 'bg-emerald-600' : 'bg-gray-500' }}"></span>
+                                        {{ $m->status ? 'نشط (ظاهر)' : 'مخفي (معطل)' }}
+                                    </button>
+                                </form>
+
+                                <!-- زر تعديل طريقة الشحن -->
+                                <a href="{{ route('admin.shipping.method.edit', $m) }}?return_to_zone={{ $zone->id }}" class="p-1.5 text-primary hover:bg-primary-fixed rounded-lg transition-colors" title="تعديل طريقة الشحن">
+                                    <span class="material-symbols-outlined text-lg">edit</span>
+                                </a>
+
+                                <!-- زر حذف طريقة الشحن -->
+                                <form action="{{ route('admin.shipping.method.destroy', $m) }}" method="POST" class="inline" onsubmit="return confirm('هل أنت متأكد من حذف طريقة الشحن هذه؟')">
+                                    @csrf
+                                    @method('DELETE')
+                                    <button type="submit" class="p-1.5 text-error hover:bg-error-container/30 rounded-lg transition-colors" title="حذف طريقة الشحن">
+                                        <span class="material-symbols-outlined text-lg">delete</span>
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                    @empty
+                        <p class="text-xs text-on-surface-variant text-center py-6 bg-surface rounded-xl border border-dashed border-outline-variant">لا توجد طرق شحن مخصصة بعد لهذه المنطقة. اضغط زر «إضافة طريقة شحن» أعلاه لإضافة طريقة شحن جديدة.</p>
+                    @endforelse
+                </div>
+            </div>
+            @endif
+
             <!-- Actions -->
-            <div class="flex flex-col sm:flex-row items-center gap-4 pt-6">
+            <div class="flex flex-col sm:flex-row items-center gap-4 pt-6 border-t border-outline-variant/30">
                 <button type="submit" class="w-full sm:w-auto px-10 py-3 bg-primary text-white font-title-lg rounded-xl shadow-md hover:shadow-lg hover:bg-primary/90 transition-all active:scale-95 flex items-center justify-center gap-2">
                     <span class="material-symbols-outlined">save</span>
                     {{ $zone ? __t('admin.shipping.update_zone') : __t('admin.shipping.save_zone') }}
                 </button>
-                @if($zone)
-                <button type="button" onclick="alert('{{ __t('admin.shipping.add_shipping_methods') }}')" class="w-full sm:w-auto px-8 py-3 border-2 border-primary-fixed-dim text-primary font-title-lg rounded-xl hover:bg-primary-fixed/30 transition-all active:scale-95 flex items-center justify-center gap-2">
+                @if($zone && !$zone->isEverywhere())
+                <a href="{{ route('admin.shipping.method.create') }}?zone_id={{ $zone->id }}&return_to_zone={{ $zone->id }}" class="w-full sm:w-auto px-8 py-3 border-2 border-primary-fixed-dim text-primary font-title-lg rounded-xl hover:bg-primary-fixed/30 transition-all active:scale-95 flex items-center justify-center gap-2">
                     <span class="material-symbols-outlined">add_road</span>
                     {{ __t('admin.shipping.add_shipping_methods') }}
-                </button>
+                </a>
                 @endif
                 <div class="sm:mr-auto flex items-center gap-3">
-                    @if($zone)
+                    @if($zone && !$zone->isEverywhere())
                     <button type="button" onclick="if(confirm('{{ __t('admin.shipping.confirm_delete_zone') }}')) document.getElementById('delete-zone-form').submit()" class="text-error font-label-md hover:underline px-4 py-2">
                         {{ __t('admin.shipping.delete_zone') }}
                     </button>
@@ -397,6 +397,26 @@
 
 @push('scripts')
 <script>
+function selectAllCountries() {
+    const toggles = document.querySelectorAll('.country-toggle');
+    const allChecked = Array.from(toggles).every(t => t.checked);
+    toggles.forEach(t => {
+        t.checked = !allChecked;
+        t.dispatchEvent(new Event('change'));
+    });
+}
+
+function toggleAllCountryStates(countryCode) {
+    const container = document.getElementById('states-list-' + countryCode);
+    if (!container) return;
+    const checkboxes = container.querySelectorAll('.state-checkbox');
+    const allChecked = Array.from(checkboxes).every(c => c.checked);
+    checkboxes.forEach(c => {
+        c.checked = !allChecked;
+        c.dispatchEvent(new Event('change'));
+    });
+}
+
 document.addEventListener('DOMContentLoaded', function() {
     const countryToggles = document.querySelectorAll('.country-toggle');
     const allToggle = document.querySelector('input[name="countries[]"][value="*"]');
@@ -425,6 +445,22 @@ document.addEventListener('DOMContentLoaded', function() {
                 } else {
                     parent.classList.remove('border-primary', 'bg-primary/5');
                     parent.classList.add('border-outline-variant');
+                }
+            }
+        });
+    });
+
+    document.querySelectorAll('.state-checkbox').forEach(cb => {
+        cb.addEventListener('change', function() {
+            const label = this.closest('label');
+            const span = label ? label.querySelector('span') : null;
+            if (span) {
+                if (this.checked) {
+                    span.classList.add('font-semibold', 'text-on-surface');
+                    span.classList.remove('text-outline');
+                } else {
+                    span.classList.remove('font-semibold', 'text-on-surface');
+                    span.classList.add('text-outline');
                 }
             }
         });

@@ -128,23 +128,36 @@
 
 {{-- ========== ZONES TAB ========== --}}
 @if($activeTab === 'zones')
-    <div class="space-y-6">
+    <div class="space-y-6" id="zones-container">
         @forelse($zones as $zone)
-            <section class="zone-card bg-surface-container-lowest rounded-xl border border-outline-variant overflow-hidden shadow-sm hover:shadow-md transition-all duration-200">
+            <section class="zone-card bg-surface-container-lowest rounded-xl border {{ $zone->isEverywhere() ? 'border-primary/40 bg-primary/5' : 'border-outline-variant' }} overflow-hidden shadow-sm hover:shadow-md transition-all duration-200" data-zone-id="{{ $zone->id }}">
                 {{-- Zone Header --}}
                 <div class="bg-surface-container-low p-6 flex justify-between items-center border-b border-outline-variant">
                     <div class="flex items-center gap-3">
-                        <span class="material-symbols-outlined text-primary bg-primary-fixed p-2.5 rounded-lg">location_on</span>
+                        @if(!$zone->isEverywhere())
+                            <span class="material-symbols-outlined text-outline cursor-move drag-handle" title="اسحب لإعادة الترتيب">drag_indicator</span>
+                        @endif
+                        <span class="material-symbols-outlined {{ $zone->isEverywhere() ? 'text-tertiary bg-tertiary-fixed' : 'text-primary bg-primary-fixed' }} p-2.5 rounded-lg">
+                            {{ $zone->isEverywhere() ? 'public' : 'location_on' }}
+                        </span>
                         <div>
                             <h3 class="text-lg font-bold text-on-surface flex items-center gap-2">
                                 {{ $zone->name }}
-                                @if($zone->is_default)
-                                    <span class="text-tertiary text-xs bg-tertiary-fixed px-2 py-0.5 rounded-full font-label-sm">★ {{ __t('admin.shipping.default') }}</span>
+                                @if($zone->isEverywhere())
+                                    <span class="text-tertiary text-xs bg-tertiary-fixed px-2.5 py-0.5 rounded-full font-label-sm font-bold">
+                                        🛡️ {{ __t('admin.shipping.everywhere_zone') ?? 'منطقة النظام المحجوزة' }}
+                                    </span>
+                                @elseif($zone->sort_order > 0)
+                                    <span class="text-xs bg-surface-container-high text-on-surface-variant px-2 py-0.5 rounded-full font-mono">
+                                        #{{ $zone->sort_order }}
+                                    </span>
                                 @endif
                             </h3>
                             <p class="text-outline text-sm mt-1">
-                                @if($zone->countries)
-                                    <span class="inline-flex items-center gap-1 ml-2"><span class="material-symbols-outlined text-sm">language</span>{{ $zone->getFormattedCountries() }}</span>
+                                @if($zone->isEverywhere())
+                                    <span class="text-xs text-on-surface-variant">تُستخدم تلقائيًا عندما لا تطابق مدينة الزبون أي منطقة أخرى معرّفة.</span>
+                                @elseif($zone->countries || $zone->locations->isNotEmpty())
+                                    <span class="inline-flex items-center gap-1 ml-2"><span class="material-symbols-outlined text-sm">language</span>{{ $zone->getFormattedCountries() ?: 'مواقع متعددة' }}</span>
                                 @endif
                             </p>
                         </div>
@@ -157,12 +170,14 @@
                         <a href="{{ route('admin.shipping.zone.edit', $zone) }}" class="p-2 text-on-surface-variant hover:bg-surface-container-high rounded-lg transition-all" title="{{ __t('admin.common.edit') }}">
                             <span class="material-symbols-outlined">edit</span>
                         </a>
-                        <form action="{{ route('admin.shipping.zone.destroy', $zone) }}" method="POST" class="inline" onsubmit="return confirm('{{ __t('admin.shipping.confirm_delete_zone') }}')">
-                            @csrf @method('DELETE')
-                            <button type="submit" class="p-2 text-error hover:bg-error-container rounded-lg transition-all" title="{{ __t('admin.common.delete') }}">
-                                <span class="material-symbols-outlined">delete</span>
-                            </button>
-                        </form>
+                        @if(!$zone->isEverywhere())
+                            <form action="{{ route('admin.shipping.zone.destroy', $zone) }}" method="POST" class="inline" onsubmit="return confirm('{{ __t('admin.shipping.confirm_delete_zone') }}')">
+                                @csrf @method('DELETE')
+                                <button type="submit" class="p-2 text-error hover:bg-error-container rounded-lg transition-all" title="{{ __t('admin.common.delete') }}">
+                                    <span class="material-symbols-outlined">delete</span>
+                                </button>
+                            </form>
+                        @endif
                     </div>
                 </div>
 
@@ -242,16 +257,23 @@
                                                     <div class="font-bold text-on-surface-variant">{{ $method->getTypeLabel() }}</div>
                                                 @endif
                                             </div>
+                                            <form action="{{ route('admin.shipping.method.toggle', $method) }}" method="POST" class="inline">
+                                                @csrf
+                                                <button type="submit" class="text-xs px-2.5 py-1 rounded-full font-bold transition-all hover:opacity-80 flex items-center gap-1.5 {{ $method->status ? 'bg-emerald-100 text-emerald-800 border border-emerald-300' : 'bg-gray-200 text-gray-600 border border-gray-300' }}" title="{{ $method->status ? 'انقر لإخفاء وتعطيل هذه الطريقة' : 'انقر لتفعيل وإظهار هذه الطريقة' }}">
+                                                    <span class="w-2 h-2 rounded-full {{ $method->status ? 'bg-emerald-600' : 'bg-gray-500' }}"></span>
+                                                    {{ $method->status ? 'نشط' : 'مخفي' }}
+                                                </button>
+                                            </form>
                                             <div class="flex items-center gap-1 pr-2 border-r border-outline-variant/30">
                                                 <a href="{{ route('admin.shipping.method.edit', $method) }}" class="text-primary hover:text-primary-container p-1">
                                                     <span class="material-symbols-outlined text-lg">edit</span>
                                                 </a>
-                                <form action="{{ route('admin.shipping.method.destroy', $method) }}" method="POST" class="inline" onsubmit="return confirm('{{ __t('admin.shipping.confirm_delete_method') }}')">
-                                    @csrf @method('DELETE')
-                                    <button type="submit" class="text-error hover:text-red-700 p-1">
-                                        <span class="material-symbols-outlined text-lg">delete</span>
-                                    </button>
-                                </form>
+                                                <form action="{{ route('admin.shipping.method.destroy', $method) }}" method="POST" class="inline" onsubmit="return confirm('{{ __t('admin.shipping.confirm_delete_method') }}')">
+                                                    @csrf @method('DELETE')
+                                                    <button type="submit" class="text-error hover:text-red-700 p-1">
+                                                        <span class="material-symbols-outlined text-lg">delete</span>
+                                                    </button>
+                                                </form>
                                             </div>
                                         </div>
                                     </div>
@@ -353,16 +375,20 @@
                     @if($method->estimated_days)
                         <span class="text-on-surface-variant inline-flex items-center gap-1"><span class="material-symbols-outlined text-sm">schedule</span>{{ $method->estimated_days }}</span>
                     @endif
-                    <span class="flex items-center gap-1 text-xs {{ $method->status ? 'text-green-600 font-bold' : 'text-red-500 font-bold' }}">
-                        <span class="w-1.5 h-1.5 rounded-full {{ $method->status ? 'bg-green-600' : 'bg-red-500' }}"></span> {{ $method->status ? __t('admin.common.active') : __t('admin.common.inactive') }}
-                    </span>
+                    <form action="{{ route('admin.shipping.method.toggle', $method) }}" method="POST" class="inline">
+                        @csrf
+                        <button type="submit" class="text-xs px-2.5 py-1 rounded-full font-bold transition-all hover:opacity-80 flex items-center gap-1.5 {{ $method->status ? 'bg-emerald-100 text-emerald-800 border border-emerald-300' : 'bg-gray-200 text-gray-600 border border-gray-300' }}" title="{{ $method->status ? 'انقر لإخفاء وتعطيل هذه الطريقة' : 'انقر لتفعيل وإظهار هذه الطريقة' }}">
+                            <span class="w-2 h-2 rounded-full {{ $method->status ? 'bg-emerald-600' : 'bg-gray-500' }}"></span>
+                            {{ $method->status ? __t('admin.common.active') : __t('admin.common.inactive') }}
+                        </button>
+                    </form>
                     <div class="flex gap-1 pr-2 border-r border-outline-variant/30">
-                        <a href="{{ route('admin.shipping.method.edit', $method) }}" class="text-primary hover:text-primary-container p-1">
+                        <a href="{{ route('admin.shipping.method.edit', $method) }}" class="text-primary hover:text-primary-container p-1" title="تعديل">
                             <span class="material-symbols-outlined">edit</span>
                         </a>
                         <form action="{{ route('admin.shipping.method.destroy', $method) }}" method="POST" class="inline" onsubmit="return confirm('{{ __t('admin.shipping.confirm_delete_method') }}')">
                             @csrf @method('DELETE')
-                            <button type="submit" class="text-error hover:text-red-700 p-1">
+                            <button type="submit" class="text-error hover:text-red-700 p-1" title="حذف">
                                 <span class="material-symbols-outlined">delete</span>
                             </button>
                         </form>
@@ -586,6 +612,71 @@ function toggleAddMethod(zoneId) {
     const el = document.getElementById('addMethod-' + zoneId);
     if(el) el.classList.toggle('hidden');
 }
+
+// Drag and Drop Zone Reordering
+document.addEventListener('DOMContentLoaded', () => {
+    const container = document.getElementById('zones-container');
+    if (!container) return;
+
+    let draggedItem = null;
+
+    const cards = container.querySelectorAll('.zone-card:not([data-zone-id="{{ \App\Modules\Shipping\Models\ShippingZone::getOrCreateEverywhereZone()->id }}"])');
+    cards.forEach(card => {
+        card.setAttribute('draggable', 'true');
+
+        card.addEventListener('dragstart', (e) => {
+            draggedItem = card;
+            e.dataTransfer.effectAllowed = 'move';
+            card.classList.add('opacity-50');
+        });
+
+        card.addEventListener('dragend', () => {
+            if (draggedItem) {
+                draggedItem.classList.remove('opacity-50');
+                draggedItem = null;
+            }
+        });
+
+        card.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            e.dataTransfer.dropEffect = 'move';
+            const bounding = card.getBoundingClientRect();
+            const offset = bounding.y + (bounding.height / 2);
+            if (e.clientY - offset > 0) {
+                card.after(draggedItem);
+            } else {
+                card.before(draggedItem);
+            }
+        });
+
+        card.addEventListener('drop', (e) => {
+            e.preventDefault();
+            saveZonesOrder();
+        });
+    });
+
+    function saveZonesOrder() {
+        const standardCards = container.querySelectorAll('.zone-card[data-zone-id]:not([data-zone-id="{{ \App\Modules\Shipping\Models\ShippingZone::getOrCreateEverywhereZone()->id }}"])');
+        const ids = Array.from(standardCards).map(c => c.getAttribute('data-zone-id'));
+
+        fetch('{{ route('admin.shipping.zone.reorder') }}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                'Accept': 'application/json'
+            },
+            body: JSON.stringify({ order: ids })
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.success) {
+                console.log('Zone order updated successfully');
+            }
+        })
+        .catch(err => console.error('Error reordering zones:', err));
+    }
+});
 </script>
 @endpush
 @endsection

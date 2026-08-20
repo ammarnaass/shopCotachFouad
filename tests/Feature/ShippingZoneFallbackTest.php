@@ -75,7 +75,7 @@ class ShippingZoneFallbackTest extends TestCase
 
         // إنشاء منطقة ثانية افتراضية عبر الكنترولر (محاكاة HTTP)
         $this->actingAs($this->createAdminUser())
-            ->post(route('admin.shipping.zone.store'), [
+            ->post(route('admin.shipping.zone.store', ['locale' => 'ar']), [
                 'name'                    => 'المنطقة الثانية',
                 'delivery_type'           => 'both',
                 'cost'                    => 300,
@@ -117,11 +117,20 @@ class ShippingZoneFallbackTest extends TestCase
     // =====================================================================
     private function createAdminUser()
     {
-        // عدّل هذا وفق موديل الـ User الفعلي في مشروعك
         $userClass = class_exists(\App\Models\User\User::class)
             ? \App\Models\User\User::class
             : \App\Models\User::class;
 
-        return $userClass::factory()->create(['role' => 'admin']);
+        $user = $userClass::factory()->create();
+
+        if (class_exists(\App\Modules\Users\Models\Role::class)) {
+            $role = \App\Modules\Users\Models\Role::firstOrCreate(
+                ['name' => 'admin'],
+                ['display_name' => 'Administrator', 'name' => 'admin']
+            );
+            $user->roles()->syncWithoutDetaching([$role->id]);
+        }
+
+        return $user;
     }
 }
