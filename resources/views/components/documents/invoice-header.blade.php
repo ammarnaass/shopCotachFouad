@@ -41,8 +41,8 @@
                     @if($store['invoice_notes']) {{ $store['invoice_notes'] }}<br>@endif
                 </div>
             </td>
-            <td style="width:45%; vertical-align:top; text-align:left; direction:ltr;">
-                <div class="invoice-title">INVOICE / فاتورة</div>
+            <td style="width:45%; vertical-align:top; text-align:left;">
+                <div class="invoice-title">فاتورة / INVOICE</div>
                 <table class="invoice-meta-table" cellpadding="0" cellspacing="0">
                     <tr>
                         <td class="meta-label">رقم الفاتورة</td>

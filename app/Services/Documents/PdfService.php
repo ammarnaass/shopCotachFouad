@@ -5,9 +5,10 @@ namespace App\Services\Documents;
 use App\Models\Documents\InvoiceTemplate;
 use App\Models\Documents\LabelTemplate;
 use App\Models\Order\Order;
-use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Response;
 use Illuminate\Support\Collection;
+use Mpdf\Mpdf;
+use Mpdf\Output\Destination;
 
 class PdfService
 {
@@ -15,6 +16,38 @@ class PdfService
         private InvoiceService $invoiceService,
         private LabelService   $labelService,
     ) {}
+
+    /**
+     * Create and configure an mPDF instance with full native Arabic, BiDi, and RTL support.
+     */
+    private function createMpdf(array|string $format = 'A4', string $orientation = 'P', array $margins = [8, 8, 8, 8]): Mpdf
+    {
+        $tmp = storage_path('app/mpdf');
+        if (! is_dir($tmp)) {
+            @mkdir($tmp, 0775, true);
+        }
+
+        $mpdf = new Mpdf([
+            'mode'                     => 'utf-8',
+            'format'                   => $format,
+            'orientation'              => $orientation,
+            'tempDir'                  => $tmp,
+            'default_font'             => 'dejavusanscondensed',
+            'margin_left'              => $margins[0] ?? 8,
+            'margin_right'             => $margins[1] ?? 8,
+            'margin_top'               => $margins[2] ?? 8,
+            'margin_bottom'            => $margins[3] ?? 8,
+            'autoArabic'               => true,
+            'autoLangToFont'           => true,
+            'allow_charset_conversion' => true,
+        ]);
+
+        $mpdf->SetDirectionality('rtl');
+        $mpdf->autoScriptToLang = true;
+        $mpdf->autoLangToFont   = true;
+
+        return $mpdf;
+    }
 
     /**
      * Generate and download an invoice PDF for a single order.
@@ -27,17 +60,31 @@ class PdfService
         $invoice  = $this->invoiceService->getOrCreate($order, $templateId);
         $data     = $this->invoiceService->getInvoiceData($order, $invoice, $template);
 
-        $view      = $this->resolveInvoiceView($template);
-        $html      = view($view, array_merge($data, ['pdf_mode' => true]))->render();
-        $paperSize = $template->getDompdfPaper();
+        $view     = $this->resolveInvoiceView($template);
+        $html     = view($view, array_merge($data, ['pdf_mode' => true]))->render();
 
-        $pdf = Pdf::loadHtml($html)
-            ->setPaper($paperSize, 'portrait')
-            ->setOption('isFontDirTmp', true)
-            ->setOption('isRemoteEnabled', true)
-            ->setOption('defaultFont', 'DejaVu Sans');
+        $format = match ($template->paper_size) {
+            'a5'         => 'A5',
+            'thermal_80' => [80, 297],
+            'thermal_58' => [58, 297],
+            default      => 'A4',
+        };
 
-        return $pdf->download('invoice-' . $invoice->invoice_number . '.pdf');
+        $margins = match ($template->paper_size) {
+            'thermal_80', 'thermal_58' => [3, 3, 3, 3],
+            default                    => [8, 8, 8, 8],
+        };
+
+        $mpdf = $this->createMpdf($format, 'P', $margins);
+        $mpdf->WriteHTML($html);
+
+        $filename = 'invoice-' . $invoice->invoice_number . '.pdf';
+        $pdfOutput = $mpdf->Output($filename, Destination::STRING_RETURN);
+
+        return response($pdfOutput, 200, [
+            'Content-Type'        => 'application/pdf',
+            'Content-Disposition' => 'attachment; filename="' . $filename . '"',
+        ]);
     }
 
     /**
@@ -53,13 +100,17 @@ class PdfService
         $html     = view($view, array_merge($data, ['pdf_mode' => true]))->render();
         $size     = $template->size_mm;
 
-        $pdf = Pdf::loadHtml($html)
-            ->setPaper([0, 0, $this->mmToPt($size['width']), $this->mmToPt($size['height'])], 'portrait')
-            ->setOption('isFontDirTmp', true)
-            ->setOption('isRemoteEnabled', true)
-            ->setOption('defaultFont', 'DejaVu Sans');
+        $format   = [$size['width'], $size['height']];
+        $mpdf     = $this->createMpdf($format, 'P', [4, 4, 4, 4]);
+        $mpdf->WriteHTML($html);
 
-        return $pdf->download('label-' . $order->order_number . '.pdf');
+        $filename = 'label-' . $order->order_number . '.pdf';
+        $pdfOutput = $mpdf->Output($filename, Destination::STRING_RETURN);
+
+        return response($pdfOutput, 200, [
+            'Content-Type'        => 'application/pdf',
+            'Content-Disposition' => 'attachment; filename="' . $filename . '"',
+        ]);
     }
 
     /**
@@ -84,13 +135,28 @@ class PdfService
             'pdf_mode' => true,
         ])->render();
 
-        $pdf = Pdf::loadHtml($html)
-            ->setPaper($template->getDompdfPaper(), 'portrait')
-            ->setOption('isFontDirTmp', true)
-            ->setOption('isRemoteEnabled', true)
-            ->setOption('defaultFont', 'DejaVu Sans');
+        $format = match ($template->paper_size) {
+            'a5'         => 'A5',
+            'thermal_80' => [80, 297],
+            'thermal_58' => [58, 297],
+            default      => 'A4',
+        };
 
-        return $pdf->download('invoices-bulk-' . now()->format('Ymd-His') . '.pdf');
+        $margins = match ($template->paper_size) {
+            'thermal_80', 'thermal_58' => [3, 3, 3, 3],
+            default                    => [8, 8, 8, 8],
+        };
+
+        $mpdf = $this->createMpdf($format, 'P', $margins);
+        $mpdf->WriteHTML($html);
+
+        $filename = 'invoices-bulk-' . now()->format('Ymd-His') . '.pdf';
+        $pdfOutput = $mpdf->Output($filename, Destination::STRING_RETURN);
+
+        return response($pdfOutput, 200, [
+            'Content-Type'        => 'application/pdf',
+            'Content-Disposition' => 'attachment; filename="' . $filename . '"',
+        ]);
     }
 
     /**
@@ -115,13 +181,17 @@ class PdfService
             'pdf_mode' => true,
         ])->render();
 
-        $pdf = Pdf::loadHtml($html)
-            ->setPaper([0, 0, $this->mmToPt($size['width']), $this->mmToPt($size['height'])], 'portrait')
-            ->setOption('isFontDirTmp', true)
-            ->setOption('isRemoteEnabled', true)
-            ->setOption('defaultFont', 'DejaVu Sans');
+        $format = [$size['width'], $size['height']];
+        $mpdf   = $this->createMpdf($format, 'P', [4, 4, 4, 4]);
+        $mpdf->WriteHTML($html);
 
-        return $pdf->download('labels-bulk-' . now()->format('Ymd-His') . '.pdf');
+        $filename = 'labels-bulk-' . now()->format('Ymd-His') . '.pdf';
+        $pdfOutput = $mpdf->Output($filename, Destination::STRING_RETURN);
+
+        return response($pdfOutput, 200, [
+            'Content-Type'        => 'application/pdf',
+            'Content-Disposition' => 'attachment; filename="' . $filename . '"',
+        ]);
     }
 
     private function resolveInvoiceView(InvoiceTemplate $template): string
@@ -144,13 +214,5 @@ class PdfService
             return $view;
         }
         return 'documents.labels.classic';
-    }
-
-    /**
-     * Convert millimeters to points (1mm = 2.8346 pt).
-     */
-    private function mmToPt(int $mm): float
-    {
-        return round($mm * 2.8346, 2);
     }
 }
