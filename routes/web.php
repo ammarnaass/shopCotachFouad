@@ -158,6 +158,7 @@ Route::prefix('{locale?}')->whereIn('locale', ['ar', 'en', 'fr'])->middleware('l
     Route::get('/page/{slug}', [PageController::class, 'show'])->name('page.show');
     Route::get('/about', fn () => redirect()->route('page.show', 'about'));
     Route::get('/contact', fn () => redirect()->route('page.show', 'contact'));
+    Route::post('/contact', [PageController::class, 'contactSubmit'])->name('contact.submit');
     Route::get('/faq', fn () => redirect()->route('page.show', 'faq'));
     Route::get('/return', fn () => redirect()->route('page.show', 'return-policy'));
     Route::get('/track', [PageController::class, 'track'])->name('track');

@@ -3,45 +3,41 @@
 @section('title', __t('auth.login.title') . ' - ' . site('store_name'))
 @section('description', __t('auth.login.description') . ' ' . site('store_name'))
 
-@push('styles')
-<style>
-    .auth-form .form-input {
-        background-color: #fff;
-        border-color: {{ $siteSettings['primary_color'] ?? '#004ac6' }} !important;
-    }
-</style>
-@endpush
-
 @section('content')
-
-<section class="min-h-[85vh] flex items-center justify-center py-12 bg-white">
+<section class="min-h-[85vh] flex items-center justify-center py-12 md:py-16 bg-surface-container-low/20">
     <div class="w-full max-w-md mx-auto px-4">
-        <div class="card animate-fade-up overflow-hidden border border-outline-variant/60 shadow-xl backdrop-blur-sm">
-            {{-- Header with logo --}}
-            <div class="relative overflow-hidden p-8 text-center" style="background: {{ $siteSettings['primary_color'] ?? '#004ac6' }};">
-                <div class="absolute inset-0 bg-black/20"></div>
-                <div class="absolute -top-12 -right-12 w-40 h-40 bg-white/10 rounded-full blur-2xl"></div>
-                <div class="absolute -bottom-8 -left-8 w-32 h-32 bg-white/5 rounded-full blur-xl"></div>
+        <div class="bg-surface-container-lowest border border-outline-variant/60 rounded-3xl shadow-xl overflow-hidden animate-fade-up">
+
+            {{-- Brand Top Banner --}}
+            <div class="relative overflow-hidden p-8 text-center bg-gradient-to-br from-primary via-primary/95 to-primary-container text-white">
+                <div class="absolute -top-12 -end-12 w-36 h-36 bg-white/10 rounded-full blur-2xl pointer-events-none"></div>
+                <div class="absolute -bottom-8 -start-8 w-28 h-28 bg-white/10 rounded-full blur-xl pointer-events-none"></div>
+
                 <div class="relative z-10">
-                    @if(site('store_logo'))
-                        <div class="w-20 h-20 mx-auto mb-4 rounded-2xl backdrop-blur-lg p-2 flex items-center justify-center shadow-lg border border-white/30" style="background: rgba(255,255,255,0.15);">
-                            <img src="{{ site('store_logo') }}" alt="{{ site('store_name') }}" class="w-full h-full object-contain">
-                        </div>
-                    @else
-                        <div class="w-20 h-20 mx-auto mb-4 rounded-2xl backdrop-blur-lg flex items-center justify-center border border-white/30" style="background: rgba(255,255,255,0.15);">
-                            <span class="material-symbols-outlined text-3xl text-white">storefront</span>
-                        </div>
-                    @endif
-                    <h1 class="text-2xl font-extrabold mb-1 text-white">{{ __t('auth.login.welcome_back') }}</h1>
-                    <p class="text-white/80 text-sm">{{ __t('auth.login.subtitle') }}</p>
+                    <a href="{{ route('home') }}" class="inline-block group mb-3">
+                        @if(site('store_logo'))
+                            <div class="w-18 h-18 mx-auto rounded-2xl bg-white/15 backdrop-blur-md p-2 flex items-center justify-center shadow-lg border border-white/25 group-hover:scale-105 transition-transform">
+                                <img src="{{ site('store_logo') }}" alt="{{ site('store_name') }}" class="w-full h-full object-contain">
+                            </div>
+                        @else
+                            <div class="w-16 h-16 mx-auto rounded-2xl bg-white/20 backdrop-blur-md flex items-center justify-center border border-white/30 text-white shadow-lg group-hover:scale-105 transition-transform">
+                                <span class="material-symbols-outlined text-3xl">storefront</span>
+                            </div>
+                        @endif
+                    </a>
+
+                    <h1 class="text-2xl font-black text-white tracking-tight mb-1">{{ __t('auth.login.welcome_back') ?? 'مرحباً بعودتك' }}</h1>
+                    <p class="text-white/85 text-xs sm:text-sm font-medium">{{ __t('auth.login.subtitle') ?? 'سجل دخولك لمتابعة التسوق وإدارة طلباتك' }}</p>
                 </div>
             </div>
 
-            <div class="card-body p-6 md:p-8 auth-form">
+            {{-- Form Body --}}
+            <div class="p-6 sm:p-8" x-data="{ showPassword: false }">
+
                 @if($errors->any())
-                    <div class="alert alert-danger mb-5">
-                        <span class="material-symbols-outlined text-lg">warning</span>
-                        <div class="flex-1">
+                    <div class="mb-5 p-4 rounded-2xl bg-red-50/80 border border-red-200/80 text-error flex items-start gap-3">
+                        <span class="material-symbols-outlined text-xl shrink-0 mt-0.5">error</span>
+                        <div class="text-xs sm:text-sm font-semibold space-y-1">
                             @foreach($errors->all() as $error)
                                 <p>{{ $error }}</p>
                             @endforeach
@@ -51,69 +47,95 @@
 
                 <form method="POST" action="{{ route('login') }}" class="space-y-4">
                     @csrf
-                    <div>
-                        <label class="form-label">{{ __t('auth.login.email') }}</label>
+
+                    {{-- Email Input --}}
+                    <div class="space-y-1.5">
+                        <label class="block text-xs font-bold uppercase tracking-wider text-on-surface-variant">
+                            {{ __t('auth.login.email') ?? 'البريد الإلكتروني' }}
+                        </label>
                         <div class="relative">
-                            <input type="email" name="email" value="{{ old('email') }}" required
-                                   placeholder="example@email.com"
+                            <input type="email" name="email" value="{{ old('email') }}" required autofocus
+                                   placeholder="name@example.com"
                                    autocomplete="email"
-                                   class="form-input pl-11 @error('email') form-input-error @enderror">
-                            <span class="material-symbols-outlined absolute left-3.5 top-1/2 -translate-y-1/2 text-outline">mail</span>
+                                   class="w-full ps-11 pe-4 py-3 rounded-xl border border-outline-variant/60 bg-surface-container-low/30 text-xs sm:text-sm font-medium text-on-surface focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all @error('email') border-red-400 bg-red-50/30 @enderror" dir="ltr">
+                            <span class="material-symbols-outlined absolute start-3.5 top-1/2 -translate-y-1/2 text-on-surface-variant text-lg pointer-events-none">mail</span>
                         </div>
-                        @error('email')<p class="form-error">{{ $message }}</p>@enderror
+                        @error('email')
+                            <p class="text-xs text-error font-semibold mt-1">{{ $message }}</p>
+                        @enderror
                     </div>
 
-                    <div>
-                        <label class="form-label">{{ __t('auth.login.password') }}</label>
+                    {{-- Password Input with Show/Hide Toggle --}}
+                    <div class="space-y-1.5">
+                        <div class="flex items-center justify-between">
+                            <label class="block text-xs font-bold uppercase tracking-wider text-on-surface-variant">
+                                {{ __t('auth.login.password') ?? 'كلمة المرور' }}
+                            </label>
+                        </div>
                         <div class="relative">
-                            <input type="password" name="password" required
+                            <input :type="showPassword ? 'text' : 'password'" name="password" required
                                    placeholder="••••••••"
                                    autocomplete="current-password"
-                                   class="form-input pl-11 @error('password') form-input-error @enderror">
-                            <span class="material-symbols-outlined absolute left-3.5 top-1/2 -translate-y-1/2 text-outline">lock</span>
+                                   class="w-full ps-11 pe-11 py-3 rounded-xl border border-outline-variant/60 bg-surface-container-low/30 text-xs sm:text-sm font-medium text-on-surface focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all @error('password') border-red-400 bg-red-50/30 @enderror" dir="ltr">
+                            <span class="material-symbols-outlined absolute start-3.5 top-1/2 -translate-y-1/2 text-on-surface-variant text-lg pointer-events-none">lock</span>
+                            <button type="button" @click="showPassword = !showPassword"
+                                    class="absolute end-3.5 top-1/2 -translate-y-1/2 text-on-surface-variant hover:text-on-surface transition-colors p-1"
+                                    aria-label="إظهار / إخفاء كلمة المرور">
+                                <span class="material-symbols-outlined text-lg" x-text="showPassword ? 'visibility_off' : 'visibility'"></span>
+                            </button>
                         </div>
-                        @error('password')<p class="form-error">{{ $message }}</p>@enderror
+                        @error('password')
+                            <p class="text-xs text-error font-semibold mt-1">{{ $message }}</p>
+                        @enderror
                     </div>
 
-                    <div class="flex items-center justify-between text-sm">
-                        <label class="flex items-center gap-2 cursor-pointer text-on-surface-variant">
-                            <input type="checkbox" name="remember" class="form-checkbox">
-                            <span>{{ __t('auth.login.remember_me') }}</span>
+                    {{-- Remember Me & Forgot Password --}}
+                    <div class="flex items-center justify-between text-xs pt-1">
+                        <label class="inline-flex items-center gap-2 cursor-pointer select-none text-on-surface-variant font-semibold">
+                            <input type="checkbox" name="remember" class="w-4 h-4 rounded text-primary border-outline-variant focus:ring-primary">
+                            <span>{{ __t('auth.login.remember_me') ?? 'تذكرني' }}</span>
                         </label>
-                        <a href="#" class="text-brand-600 font-semibold hover:underline">
-                            {{ __t('auth.login.forgot_password') }}
+                        <a href="{{ route('page.show', 'contact') }}" class="text-primary font-bold hover:underline">
+                            {{ __t('auth.login.forgot_password') ?? 'نسيت كلمة المرور؟' }}
                         </a>
                     </div>
 
-                    <button type="submit" class="btn-block btn-lg mt-2 text-white font-bold rounded-xl py-3.5 transition-all duration-200 hover:brightness-110 active:scale-[0.98] shadow-lg" style="background: {{ $siteSettings['primary_color'] ?? '#004ac6' }};">
-                        <span class="material-symbols-outlined align-middle ms-1">login</span>
-                        {{ __t('auth.login.submit') }}
+                    {{-- Submit Button --}}
+                    <button type="submit"
+                            class="w-full inline-flex items-center justify-center gap-2 py-3.5 px-6 rounded-xl bg-primary text-white font-bold text-xs sm:text-sm shadow-md hover:shadow-lg hover:brightness-105 active:scale-[0.98] transition-all duration-200 mt-2">
+                        <span class="material-symbols-outlined text-lg">login</span>
+                        <span>{{ __t('auth.login.submit') ?? 'تسجيل الدخول' }}</span>
                     </button>
                 </form>
 
+                {{-- Divider --}}
                 <div class="relative my-6">
                     <div class="absolute inset-0 flex items-center">
-                        <div class="w-full border-t border-outline-variant"></div>
+                        <div class="w-full border-t border-outline-variant/60"></div>
                     </div>
                     <div class="relative flex justify-center text-xs">
-                        <span class="bg-surface-container-lowest px-3 text-on-surface-variant">{{ __t('auth.login.or') }}</span>
+                        <span class="bg-surface-container-lowest px-3 text-on-surface-variant font-semibold">{{ __t('auth.login.or') ?? 'أو' }}</span>
                     </div>
                 </div>
 
-                <p class="text-center text-sm text-on-surface-variant">
-                    {{ __t('auth.login.no_account') }}
-                    <a href="{{ route('register') }}" class="text-brand-600 font-bold hover:underline">
-                        {{ __t('auth.login.register_now') }}
-                    </a>
-                </p>
+                {{-- Create Account Link --}}
+                <div class="text-center">
+                    <p class="text-xs sm:text-sm text-on-surface-variant">
+                        {{ __t('auth.login.no_account') ?? 'ليس لديك حساب بعد؟' }}
+                        <a href="{{ route('register') }}" class="text-primary font-black hover:underline ms-1">
+                            {{ __t('auth.login.register_now') ?? 'إنشاء حساب جديد' }}
+                        </a>
+                    </p>
+                </div>
             </div>
         </div>
 
-        <p class="text-center text-xs text-on-surface-variant/60 mt-6">
-            {{ __t('auth.login.terms_prefix') }}
-            <a href="{{ route('page.show', ['slug' => 'terms']) }}" class="text-brand-600 hover:underline">{{ __t('auth.login.terms') }}</a>
-            {{ __t('auth.login.and') }}
-            <a href="{{ route('page.show', ['slug' => 'privacy']) }}" class="text-brand-600 hover:underline">{{ __t('auth.login.privacy') }}</a>
+        {{-- Terms & Privacy Notice --}}
+        <p class="text-center text-[11px] text-on-surface-variant/70 mt-6 leading-relaxed">
+            {{ __t('auth.login.terms_prefix') ?? 'بتسجيل الدخول، أنت توافق على' }}
+            <a href="{{ route('page.show', ['slug' => 'terms']) }}" class="text-primary hover:underline font-semibold">{{ __t('auth.login.terms') ?? 'الشروط والأحكام' }}</a>
+            {{ __t('auth.login.and') ?? 'و' }}
+            <a href="{{ route('page.show', ['slug' => 'privacy']) }}" class="text-primary hover:underline font-semibold">{{ __t('auth.login.privacy') ?? 'سياسة الخصوصية' }}</a>
         </p>
     </div>
 </section>

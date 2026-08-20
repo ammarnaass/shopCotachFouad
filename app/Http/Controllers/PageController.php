@@ -31,6 +31,27 @@ class PageController extends Controller
     }
 
     /**
+     * Handle contact form submissions.
+     */
+    public function contactSubmit(Request $request)
+    {
+        $data = $request->validate([
+            'name' => 'required|string|max:100',
+            'email' => 'required|email|max:150',
+            'phone' => 'nullable|string|max:30',
+            'subject' => 'nullable|string|max:200',
+            'message' => 'required|string|max:2000',
+        ], [
+            'name.required' => __t('contact.name_required', [], 'يرجى إدخال الاسم الكامل'),
+            'email.required' => __t('contact.email_required', [], 'يرجى إدخال البريد الإلكتروني'),
+            'email.email' => __t('contact.email_invalid', [], 'يرجى إدخال بريد إلكتروني صحيح'),
+            'message.required' => __t('contact.message_required', [], 'يرجى كتابة نص الرسالة'),
+        ]);
+
+        return back()->with('success', __t('contact.success_message', [], 'شكراً لتواصلك معنا! تم استلام رسالتك وسنقوم بالرد عليك في أقرب وقت.'));
+    }
+
+    /**
      * Track an order by order_number + email/phone.
      */
     public function track(Request $request): View

@@ -3,49 +3,46 @@
 @section('title', __t('auth.register.title') . ' - ' . site('store_name'))
 @section('description', __t('auth.register.description') . ' ' . site('store_name'))
 
-@push('styles')
-<style>
-    .auth-form .form-input {
-        background-color: #fff;
-        border-color: {{ $siteSettings['primary_color'] ?? '#004ac6' }} !important;
-    }
-</style>
-@endpush
-
 @section('content')
 @php
     $countries = config('ecommerce.countries', []);
     $defaultCountry = old('country_code', config('ecommerce.store.default_country', 'DZ'));
 @endphp
 
-<section class="min-h-[85vh] flex items-center justify-center py-12 bg-white">
-    <div class="w-full max-w-2xl mx-auto px-4">
-        <div class="card animate-fade-up overflow-hidden border border-outline-variant/60 shadow-xl backdrop-blur-sm">
-            {{-- Header with logo --}}
-            <div class="relative overflow-hidden p-8 text-center" style="background: {{ $siteSettings['primary_color'] ?? '#004ac6' }};">
-                <div class="absolute inset-0 bg-black/20"></div>
-                <div class="absolute -top-12 -right-12 w-40 h-40 bg-white/10 rounded-full blur-2xl"></div>
-                <div class="absolute -bottom-8 -left-8 w-32 h-32 bg-white/5 rounded-full blur-xl"></div>
+<section class="min-h-[85vh] flex items-center justify-center py-12 md:py-16 bg-surface-container-low/20">
+    <div class="w-full max-w-xl mx-auto px-4">
+        <div class="bg-surface-container-lowest border border-outline-variant/60 rounded-3xl shadow-xl overflow-hidden animate-fade-up">
+
+            {{-- Brand Top Banner --}}
+            <div class="relative overflow-hidden p-8 text-center bg-gradient-to-br from-primary via-primary/95 to-primary-container text-white">
+                <div class="absolute -top-12 -end-12 w-36 h-36 bg-white/10 rounded-full blur-2xl pointer-events-none"></div>
+                <div class="absolute -bottom-8 -start-8 w-28 h-28 bg-white/10 rounded-full blur-xl pointer-events-none"></div>
+
                 <div class="relative z-10">
-                    @if(site('store_logo'))
-                        <div class="w-20 h-20 mx-auto mb-4 rounded-2xl backdrop-blur-lg p-2 flex items-center justify-center shadow-lg border border-white/30" style="background: rgba(255,255,255,0.15);">
-                            <img src="{{ site('store_logo') }}" alt="{{ site('store_name') }}" class="w-full h-full object-contain">
-                        </div>
-                    @else
-                        <div class="w-20 h-20 mx-auto mb-4 rounded-2xl backdrop-blur-lg flex items-center justify-center border border-white/30" style="background: rgba(255,255,255,0.15);">
-                            <span class="material-symbols-outlined text-3xl text-white">storefront</span>
-                        </div>
-                    @endif
-                    <h1 class="text-2xl font-extrabold mb-1 text-white">{{ __t('auth.register.heading') }}</h1>
-                    <p class="text-white/80 text-sm">{{ __t('auth.register.subtitle') }}</p>
+                    <a href="{{ route('home') }}" class="inline-block group mb-3">
+                        @if(site('store_logo'))
+                            <div class="w-18 h-18 mx-auto rounded-2xl bg-white/15 backdrop-blur-md p-2 flex items-center justify-center shadow-lg border border-white/25 group-hover:scale-105 transition-transform">
+                                <img src="{{ site('store_logo') }}" alt="{{ site('store_name') }}" class="w-full h-full object-contain">
+                            </div>
+                        @else
+                            <div class="w-16 h-16 mx-auto rounded-2xl bg-white/20 backdrop-blur-md flex items-center justify-center border border-white/30 text-white shadow-lg group-hover:scale-105 transition-transform">
+                                <span class="material-symbols-outlined text-3xl">person_add</span>
+                            </div>
+                        @endif
+                    </a>
+
+                    <h1 class="text-2xl font-black text-white tracking-tight mb-1">{{ __t('auth.register.heading') ?? 'إنشاء حساب جديد' }}</h1>
+                    <p class="text-white/85 text-xs sm:text-sm font-medium">{{ __t('auth.register.subtitle') ?? 'انضم إلينا واستمتع بتجربة تسوق فريدة ومميزة' }}</p>
                 </div>
             </div>
 
-            <div class="card-body p-6 md:p-8 auth-form">
+            {{-- Form Body --}}
+            <div class="p-6 sm:p-8" x-data="{ showPassword: false, showConfirm: false }">
+
                 @if($errors->any())
-                    <div class="alert alert-danger mb-5">
-                        <span class="material-symbols-outlined text-lg">warning</span>
-                        <div class="flex-1">
+                    <div class="mb-5 p-4 rounded-2xl bg-red-50/80 border border-red-200/80 text-error flex items-start gap-3">
+                        <span class="material-symbols-outlined text-xl shrink-0 mt-0.5">error</span>
+                        <div class="text-xs sm:text-sm font-semibold space-y-1">
                             @foreach($errors->all() as $error)
                                 <p>{{ $error }}</p>
                             @endforeach
@@ -56,140 +53,189 @@
                 <form method="POST" action="{{ route('register') }}" class="space-y-4">
                     @csrf
 
-                    <div>
-                        <label class="form-label">{{ __t('auth.register.full_name') }} <span class="text-error">*</span></label>
+                    {{-- Full Name --}}
+                    <div class="space-y-1.5">
+                        <label class="block text-xs font-bold uppercase tracking-wider text-on-surface-variant">
+                            {{ __t('auth.register.full_name') ?? 'الاسم الكامل' }} <span class="text-error">*</span>
+                        </label>
                         <div class="relative">
-                            <input type="text" name="name" value="{{ old('name') }}" required
-                                   placeholder="{{ __t('auth.register.full_name_placeholder') }}"
-                                   class="form-input pl-11 @error('name') form-input-error @enderror">
-                            <span class="material-symbols-outlined absolute left-3.5 top-1/2 -translate-y-1/2 text-outline">person</span>
+                            <input type="text" name="name" value="{{ old('name') }}" required autofocus
+                                   placeholder="{{ __t('auth.register.full_name_placeholder') ?? 'مثال: محمد أحمد' }}"
+                                   class="w-full ps-11 pe-4 py-3 rounded-xl border border-outline-variant/60 bg-surface-container-low/30 text-xs sm:text-sm font-medium text-on-surface focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all @error('name') border-red-400 bg-red-50/30 @enderror">
+                            <span class="material-symbols-outlined absolute start-3.5 top-1/2 -translate-y-1/2 text-on-surface-variant text-lg pointer-events-none">person</span>
                         </div>
-                        @error('name')<p class="form-error">{{ $message }}</p>@enderror
+                        @error('name')
+                            <p class="text-xs text-error font-semibold mt-1">{{ $message }}</p>
+                        @enderror
                     </div>
 
-                    <div>
-                        <label class="form-label">{{ __t('auth.register.email') }} <span class="text-error">*</span></label>
+                    {{-- Email Address --}}
+                    <div class="space-y-1.5">
+                        <label class="block text-xs font-bold uppercase tracking-wider text-on-surface-variant">
+                            {{ __t('auth.register.email') ?? 'البريد الإلكتروني' }} <span class="text-error">*</span>
+                        </label>
                         <div class="relative">
                             <input type="email" name="email" value="{{ old('email') }}" required
-                                   placeholder="example@email.com"
+                                   placeholder="name@example.com"
                                    autocomplete="email"
-                                   class="form-input pl-11 @error('email') form-input-error @enderror">
-                            <span class="material-symbols-outlined absolute left-3.5 top-1/2 -translate-y-1/2 text-outline">mail</span>
+                                   class="w-full ps-11 pe-4 py-3 rounded-xl border border-outline-variant/60 bg-surface-container-low/30 text-xs sm:text-sm font-medium text-on-surface focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all @error('email') border-red-400 bg-red-50/30 @enderror" dir="ltr">
+                            <span class="material-symbols-outlined absolute start-3.5 top-1/2 -translate-y-1/2 text-on-surface-variant text-lg pointer-events-none">mail</span>
                         </div>
-                        @error('email')<p class="form-error">{{ $message }}</p>@enderror
+                        @error('email')
+                            <p class="text-xs text-error font-semibold mt-1">{{ $message }}</p>
+                        @enderror
                     </div>
 
+                    {{-- Country & State Grid --}}
                     <div class="grid sm:grid-cols-2 gap-4">
-                        <div>
-                            <label class="form-label">{{ __t('auth.register.country') }} <span class="text-error">*</span></label>
+                        <div class="space-y-1.5">
+                            <label class="block text-xs font-bold uppercase tracking-wider text-on-surface-variant">
+                                {{ __t('auth.register.country') ?? 'الدولة' }} <span class="text-error">*</span>
+                            </label>
                             <div class="relative">
                                 <select name="country_code" id="country_code" required
                                         onchange="updateStates(this.value)"
-                                        class="form-input pl-11 appearance-none @error('country_code') form-input-error @enderror">
+                                        class="w-full ps-11 pe-8 py-3 rounded-xl border border-outline-variant/60 bg-surface-container-low/30 text-xs sm:text-sm font-semibold text-on-surface focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all appearance-none cursor-pointer">
                                     @foreach($countries as $code => $info)
                                         <option value="{{ $code }}" {{ $defaultCountry == $code ? 'selected' : '' }}
                                                 data-dial="{{ $info['dial_code'] }}">
-                                            {{ $info['name'] }} ({{ $info['name_en'] }})
+                                            {{ $info['flag'] ?? '🌐' }} {{ $info['name'] }} ({{ $info['name_en'] }})
                                         </option>
                                     @endforeach
                                 </select>
-                                <span class="material-symbols-outlined absolute left-3.5 top-1/2 -translate-y-1/2 text-outline">public</span>
+                                <span class="material-symbols-outlined absolute start-3.5 top-1/2 -translate-y-1/2 text-on-surface-variant text-lg pointer-events-none">public</span>
+                                <span class="material-symbols-outlined absolute end-3 top-1/2 -translate-y-1/2 text-on-surface-variant text-sm pointer-events-none">expand_more</span>
                             </div>
-                            @error('country_code')<p class="form-error">{{ $message }}</p>@enderror
+                            @error('country_code')
+                                <p class="text-xs text-error font-semibold mt-1">{{ $message }}</p>
+                            @enderror
                         </div>
 
-                        <div>
-                            <label class="form-label">{{ __t('auth.register.state') }}</label>
+                        <div class="space-y-1.5">
+                            <label class="block text-xs font-bold uppercase tracking-wider text-on-surface-variant">
+                                {{ __t('auth.register.state') ?? 'الولاية / المنطقة' }}
+                            </label>
                             <div class="relative">
-                                <select name="state_code" id="state_code" class="form-input pl-11 appearance-none">
-                                    <option value="">{{ __t('auth.register.state_placeholder') }}</option>
+                                <select name="state_code" id="state_code"
+                                        class="w-full ps-11 pe-8 py-3 rounded-xl border border-outline-variant/60 bg-surface-container-low/30 text-xs sm:text-sm font-semibold text-on-surface focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all appearance-none cursor-pointer">
+                                    <option value="">{{ __t('auth.register.state_placeholder') ?? '— اختر الولاية / المحافظة —' }}</option>
                                     @foreach($countries[$defaultCountry]['states'] ?? [] as $code => $name)
                                         <option value="{{ $code }}" {{ old('state_code') == $code ? 'selected' : '' }}>{{ $name }}</option>
                                     @endforeach
                                 </select>
-                                <span class="material-symbols-outlined absolute left-3.5 top-1/2 -translate-y-1/2 text-outline">location_on</span>
+                                <span class="material-symbols-outlined absolute start-3.5 top-1/2 -translate-y-1/2 text-on-surface-variant text-lg pointer-events-none">location_on</span>
+                                <span class="material-symbols-outlined absolute end-3 top-1/2 -translate-y-1/2 text-on-surface-variant text-sm pointer-events-none">expand_more</span>
                             </div>
                         </div>
                     </div>
 
-                    <div>
-                        <label class="form-label">{{ __t('auth.register.phone') }} <span class="text-error">*</span></label>
+                    {{-- Phone Number --}}
+                    <div class="space-y-1.5">
+                        <label class="block text-xs font-bold uppercase tracking-wider text-on-surface-variant">
+                            {{ __t('auth.register.phone') ?? 'رقم الهاتف' }} <span class="text-error">*</span>
+                        </label>
                         <div class="flex gap-2" dir="ltr">
-                            <input type="text" id="dial_code" value="{{ $countries[$defaultCountry]['dial_code'] ?? '' }}"
+                            <input type="text" id="dial_code" value="{{ $countries[$defaultCountry]['dial_code'] ?? '+213' }}"
                                    readonly
-                                   class="w-20 px-3 py-2.5 border border-outline-variant rounded-xl bg-surface-container-low text-center font-semibold text-on-surface-variant">
-                            <input type="text" name="phone" value="{{ old('phone') }}" required
-                                   placeholder="5XXXXXXXX"
-                                   class="flex-1 form-input text-end @error('phone') form-input-error @enderror">
+                                   class="w-20 px-3 py-3 border border-outline-variant/60 rounded-xl bg-surface-container-low text-center font-mono font-bold text-xs text-on-surface-variant">
+                            <input type="tel" name="phone" value="{{ old('phone') }}" required
+                                   placeholder="550000000"
+                                   class="flex-1 ps-4 pe-4 py-3 rounded-xl border border-outline-variant/60 bg-surface-container-low/30 text-xs sm:text-sm font-mono text-on-surface focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all @error('phone') border-red-400 bg-red-50/30 @enderror">
                         </div>
-                        <p class="form-help"><span class="material-symbols-outlined text-xs ms-1">info</span>{{ __t('auth.register.phone_help') }}</p>
-                        @error('phone')<p class="form-error">{{ $message }}</p>@enderror
+                        <p class="text-[11px] text-on-surface-variant flex items-center gap-1">
+                            <span class="material-symbols-outlined text-xs">info</span>
+                            <span>{{ __t('auth.register.phone_help') ?? 'أدخل الرقم بدون رمز الدولة' }}</span>
+                        </p>
+                        @error('phone')
+                            <p class="text-xs text-error font-semibold mt-1">{{ $message }}</p>
+                        @enderror
                     </div>
 
+                    {{-- Password & Confirm Grid --}}
                     <div class="grid sm:grid-cols-2 gap-4">
-                        <div>
-                            <label class="form-label">{{ __t('auth.register.password') }} <span class="text-error">*</span></label>
+                        <div class="space-y-1.5">
+                            <label class="block text-xs font-bold uppercase tracking-wider text-on-surface-variant">
+                                {{ __t('auth.register.password') ?? 'كلمة المرور' }} <span class="text-error">*</span>
+                            </label>
                             <div class="relative">
-                                <input type="password" name="password" required minlength="6"
+                                <input :type="showPassword ? 'text' : 'password'" name="password" required minlength="6"
                                        placeholder="••••••••"
                                        autocomplete="new-password"
-                                       class="form-input pl-11 @error('password') form-input-error @enderror">
-                                <span class="material-symbols-outlined absolute left-3.5 top-1/2 -translate-y-1/2 text-outline">lock</span>
+                                       class="w-full ps-10 pe-10 py-3 rounded-xl border border-outline-variant/60 bg-surface-container-low/30 text-xs sm:text-sm font-medium text-on-surface focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all @error('password') border-red-400 bg-red-50/30 @enderror" dir="ltr">
+                                <span class="material-symbols-outlined absolute start-3 top-1/2 -translate-y-1/2 text-on-surface-variant text-base pointer-events-none">lock</span>
+                                <button type="button" @click="showPassword = !showPassword"
+                                        class="absolute end-2.5 top-1/2 -translate-y-1/2 text-on-surface-variant hover:text-on-surface p-1"
+                                        aria-label="إظهار / إخفاء">
+                                    <span class="material-symbols-outlined text-base" x-text="showPassword ? 'visibility_off' : 'visibility'"></span>
+                                </button>
                             </div>
-                            @error('password')<p class="form-error">{{ $message }}</p>@enderror
+                            @error('password')
+                                <p class="text-xs text-error font-semibold mt-1">{{ $message }}</p>
+                            @enderror
                         </div>
 
-                        <div>
-                            <label class="form-label">{{ __t('auth.register.password_confirmation') }} <span class="text-error">*</span></label>
+                        <div class="space-y-1.5">
+                            <label class="block text-xs font-bold uppercase tracking-wider text-on-surface-variant">
+                                {{ __t('auth.register.password_confirmation') ?? 'تأكيد كلمة المرور' }} <span class="text-error">*</span>
+                            </label>
                             <div class="relative">
-                                <input type="password" name="password_confirmation" required
+                                <input :type="showConfirm ? 'text' : 'password'" name="password_confirmation" required minlength="6"
                                        placeholder="••••••••"
                                        autocomplete="new-password"
-                                       class="form-input pl-11">
-                                <span class="material-symbols-outlined absolute left-3.5 top-1/2 -translate-y-1/2 text-outline">lock</span>
+                                       class="w-full ps-10 pe-10 py-3 rounded-xl border border-outline-variant/60 bg-surface-container-low/30 text-xs sm:text-sm font-medium text-on-surface focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all" dir="ltr">
+                                <span class="material-symbols-outlined absolute start-3 top-1/2 -translate-y-1/2 text-on-surface-variant text-base pointer-events-none">lock_clock</span>
+                                <button type="button" @click="showConfirm = !showConfirm"
+                                        class="absolute end-2.5 top-1/2 -translate-y-1/2 text-on-surface-variant hover:text-on-surface p-1"
+                                        aria-label="إظهار / إخفاء">
+                                    <span class="material-symbols-outlined text-base" x-text="showConfirm ? 'visibility_off' : 'visibility'"></span>
+                                </button>
                             </div>
                         </div>
                     </div>
 
-                    <button type="submit" class="btn-block btn-lg mt-2 text-white font-bold rounded-xl py-3.5 transition-all duration-200 hover:brightness-110 active:scale-[0.98] shadow-lg" style="background: {{ $siteSettings['primary_color'] ?? '#004ac6' }};">
-                        <span class="material-symbols-outlined align-middle ms-1">person_add</span>
-                        {{ __t('auth.register.submit') }}
+                    {{-- Submit Button --}}
+                    <button type="submit"
+                            class="w-full inline-flex items-center justify-center gap-2 py-3.5 px-6 rounded-xl bg-primary text-white font-bold text-xs sm:text-sm shadow-md hover:shadow-lg hover:brightness-105 active:scale-[0.98] transition-all duration-200 mt-3">
+                        <span class="material-symbols-outlined text-lg">person_add</span>
+                        <span>{{ __t('auth.register.submit') ?? 'إنشاء الحساب' }}</span>
                     </button>
                 </form>
 
+                {{-- Divider --}}
                 <div class="relative my-6">
                     <div class="absolute inset-0 flex items-center">
-                        <div class="w-full border-t border-outline-variant"></div>
+                        <div class="w-full border-t border-outline-variant/60"></div>
                     </div>
                     <div class="relative flex justify-center text-xs">
-                        <span class="bg-surface-container-lowest px-3 text-on-surface-variant">{{ __t('auth.register.or') }}</span>
+                        <span class="bg-surface-container-lowest px-3 text-on-surface-variant font-semibold">{{ __t('auth.register.or') ?? 'أو' }}</span>
                     </div>
                 </div>
 
-                <p class="text-center text-sm text-on-surface-variant">
-                    {{ __t('auth.register.has_account') }}
-                    <a href="{{ route('login') }}" class="text-brand-600 font-bold hover:underline">
-                        {{ __t('auth.register.login') }}
-                    </a>
-                </p>
+                {{-- Has Account Link --}}
+                <div class="text-center">
+                    <p class="text-xs sm:text-sm text-on-surface-variant">
+                        {{ __t('auth.register.has_account') ?? 'لديك حساب بالفعل؟' }}
+                        <a href="{{ route('login') }}" class="text-primary font-black hover:underline ms-1">
+                            {{ __t('auth.register.login') ?? 'تسجيل الدخول' }}
+                        </a>
+                    </p>
+                </div>
             </div>
         </div>
     </div>
 </section>
 
-@php
-    $countriesJson = json_encode($countries, JSON_UNESCAPED_UNICODE);
-@endphp
 <script>
-const countriesData = @json($countriesJson);
+const countriesData = @json($countries);
 
 function updateStates(countryCode) {
     const dialEl = document.getElementById('dial_code');
     const stateEl = document.getElementById('state_code');
     const info = countriesData[countryCode];
     if (!info) return;
-    dialEl.value = info.dial_code;
-    stateEl.innerHTML = '<option value="">' + __t('auth.register.state_placeholder') + '</option>';
+    if (dialEl) dialEl.value = info.dial_code || '';
+    if (!stateEl) return;
+    stateEl.innerHTML = '<option value="">' + @json(__t('auth.register.state_placeholder') ?? '— اختر الولاية / المحافظة —') + '</option>';
     if (info.states) {
         for (const [code, name] of Object.entries(info.states)) {
             const opt = document.createElement('option');
